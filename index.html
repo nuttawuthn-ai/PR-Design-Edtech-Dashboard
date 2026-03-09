@@ -390,17 +390,16 @@ function clean(v){return(v||'').replace(/"/g,'').trim();}
 // BUILD DB
 // ============================================================
 function buildDB(csv){
-  const lines=csv.replace(/\r\
-/g,'\
-').replace(/\r/g,'\
-').split('\
-').filter(l=>l.trim());
+  const NL='\n';
+  const lines=csv.split(/\r\n|\r|\n/).filter(l=>l.trim());
   const rawRows=[];
   const empAllSet=new Set(),yearSet=new Set(),monthSet=new Set();
   const emp_year={},emp_month={},monthly_totals={};
 
+  console.log('[buildDB] total lines:', lines.length, '| header:', lines[0]?.substring(0,60));
   for(let i=1;i<lines.length;i++){
     const row=parseCSVLine(lines[i]);
+    if(i<=2) console.log('[buildDB] row'+i+' cols:'+row.length+' col0:'+row[0]?.substring(0,15)+' col4:'+row[4]);
     if(row.length<5) continue;
 
     const assignDate=clean(row[COL.assignDate]);
@@ -825,7 +824,9 @@ function jobChangePage(dir){
 // ✅ LOAD DATA — Cache-first strategy
 // ============================================================
 function processCSV(csv, fromCache){
+  console.log('[processCSV] csv length:', csv?.length, '| first80:', csv?.substring(0,80));
   DB=buildDB(csv);
+  console.log('[processCSV] DB rows:', DB?.rawRows?.length, '| employees:', DB?.employees?.length);
   const now=new Date();
   document.getElementById('lastUpdate').textContent=
     fromCache ? '(จาก cache) ' + new Date(parseInt(localStorage.getItem(LS_TS_KEY)||0))
