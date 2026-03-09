@@ -787,15 +787,12 @@ function renderJobTable(){
       );
       if(!matched) return false;
     }
-    // filter จาก rank bar click — match แบบ partial (ชื่อย่ออาจไม่มีนามสกุล)
+    // filter จาก rank bar click
     if(state.rankEmpFilter){
+      const rf=state.rankEmpFilter.trim();
       const allEmps=[...(r.designEmps||[]),...(r.mainEmps||[]),...Object.values(r.prMediaEmps||{}),...(r.emps||[])];
-      const matched=allEmps.some(n=>
-        n===state.rankEmpFilter ||
-        n.startsWith(state.rankEmpFilter+' ') ||
-        n.startsWith(state.rankEmpFilter+' ') ||
-        state.rankEmpFilter.startsWith(n.split(' ')[0])&&n.startsWith(state.rankEmpFilter.split(' ')[0])
-      );
+      const matched=allEmps.some(n=>n&&(n.trim()===rf||n.trim().includes(rf)||rf.includes(n.trim())));
+      console.log('[FILTER] rf='+rf+' allEmps='+allEmps.join('|')+' matched='+matched);
       if(!matched) return false;
     }
     if(ownerFilter&&r.owner!==ownerFilter) return false;
