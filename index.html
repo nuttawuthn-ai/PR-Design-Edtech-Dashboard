@@ -512,9 +512,8 @@ function update(){
 
   // KPI
   let tDesign=0,tPhoto=0,tVideo=0,tSoat=0,tPr=0;
-  const keys=getKeys();
   DB.rawRows.forEach(r=>{
-    if(!keys.includes(r.ym)&&!keys.some(k=>r.ym.startsWith(k))) return;
+    if(!rowInPeriod(r)) return;
     if(state.showDesign&&r.tags.includes('design')) tDesign++;
     if(state.showPhoto&&r.tags.includes('photo'))   tPhoto++;
     if(state.showVideo&&r.tags.includes('video'))   tVideo++;
@@ -627,28 +626,49 @@ function buildJobTable(){
   renderJobTable();
 }
 
+function rowInPeriod(r){
+  // keys อาจเป็น years ["2024","2025"] หรือ months ["2024-01","2024-02"]
+  // r.ym เป็น "YYYY-MM" เสมอ
+  if(state.period==='ทั้งหมด'){
+    // ทั้งหมด → ผ่านทุก row
+    return true;
+  }
+  if(state.periodType==='year'){
+    // กรองตามปี: r.ym.startsWith("2024")
+    return r.ym.startsWith(state.period);
+  }
+  // กรองตามเดือน: r.ym === "2024-03"
+  return r.ym === state.period;
+}
+
 function renderJobTable(){
   if(!DB) return;
   const typeFilter=document.getElementById('jobTypeFilter').value;
   const empFilter=document.getElementById('jobEmpFilter').value;
   const ownerFilter=document.getElementById('jobOwnerFilter').value;
   const search=document.getElementById('jobSearch').value.toLowerCase().trim();
-  const keys=getKeys();
 
   const rows=DB.rawRows.filter(r=>{
-    if(!keys.includes(r.ym)&&!keys.some(k=>r.ym.startsWith(k))) return false;
+    // 1. กรองตามช่วงเวลา
+    if(!rowInPeriod(r)) return false;
+    // 2. กรองตามประเภทงาน
     if(typeFilter&&!r.tags.includes(typeFilter)) return false;
-    if(empFilter&&!r.emps.some(e=>e===empFilter)) return false;
+    // 3. กรองตามผู้รับผิดชอบ
+    if(empFilter&&!r.emps.includes(empFilter)) return false;
+    // 4. กรองตามเจ้าของงาน
     if(ownerFilter&&r.owner!==ownerFilter) return false;
-    if(search&&!r.jobDetail.toLowerCase().includes(search)&&
-               !r.jobId.toLowerCase().includes(search)&&
-               !r.owner.toLowerCase().includes(search)) return false;
+    // 5. ค้นหาข้อความ
+    if(search&&
+      !r.jobDetail.toLowerCase().includes(search)&&
+      !r.jobId.toLowerCase().includes(search)&&
+      !r.owner.toLowerCase().includes(search)&&
+      !r.emps.join(' ').toLowerCase().includes(search)) return false;
+    // 6. กรองตาม task toggle (ด้านบน)
     if(r.tags.length===0) return true;
-    const visibleTags=r.tags.filter(t=>
+    return r.tags.some(t=>
       (t==='design'&&state.showDesign)||(t==='photo'&&state.showPhoto)||
       (t==='video'&&state.showVideo)||(t==='soat'&&state.showSoat)||(t==='pr'&&state.showPr)
     );
-    return visibleTags.length>0;
   });
 
   const PAGE_SIZE=10;
