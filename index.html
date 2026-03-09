@@ -420,6 +420,11 @@ function buildDB(csv){
     const emps=empRaw?empRaw.split(',').map(e=>e.trim()).filter(e=>e.length>1&&e.length<=30):[];
     if(!emps.length) emps.push('ไม่ระบุ');
 
+    // ดึงผู้รับผิดชอบด้านออกแบบ/โสตฯ จาก col 10-15
+    const designEmpCols=[COL.designVid,COL.photo,COL.video,COL.soat1,COL.soat2,COL.soat3];
+    const designEmpsRaw=designEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
+    const designEmps=[...new Set(designEmpsRaw)];
+
     yearSet.add(year);monthSet.add(ym);
 
     rawRows.push({
@@ -428,7 +433,7 @@ function buildDB(csv){
       owner:clean(row[COL.owner]),
       assignDate:clean(row[COL.assignDate]),
       recvDate:clean(row[COL.receiveDate]),
-      tags,emps,year,ym
+      tags,emps,designEmps,year,ym
     });
 
     const addEmp=(emp,field)=>{
@@ -622,8 +627,12 @@ function buildJobTable(){
   if(!DB) return;
   const empSel=document.getElementById('jobEmpFilter');
   const prevEmp=empSel.value;
+  // รวม designEmps จากทุก row แบบ unique
+  const designEmpSet=new Set();
+  DB.rawRows.forEach(r=>(r.designEmps||[]).forEach(e=>designEmpSet.add(e)));
+  const designEmpList=[...designEmpSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
   empSel.innerHTML='<option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>';
-  DB.employees.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;empSel.appendChild(o);});
+  designEmpList.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;empSel.appendChild(o);});
   empSel.value=prevEmp;
 
   const ownerSel=document.getElementById('jobOwnerFilter');
@@ -664,7 +673,7 @@ function renderJobTable(){
     // 2. กรองตามประเภทงาน
     if(typeFilter&&!r.tags.includes(typeFilter)) return false;
     // 3. กรองตามผู้รับผิดชอบ
-    if(empFilter&&!r.emps.includes(empFilter)) return false;
+    if(empFilter&&!(r.designEmps||[]).includes(empFilter)) return false;
     // 4. กรองตามเจ้าของงาน
     if(ownerFilter&&r.owner!==ownerFilter) return false;
     // 5. ค้นหาข้อความ
@@ -693,7 +702,7 @@ function renderJobTable(){
       <td style="white-space:nowrap">${r.recvDate||'—'}</td>
       <td>${r.owner||'—'}</td>
       <td>${r.tags.filter(t=>t!=='pr').map(t=>`<span class="tag ${t}">${TAG_ICON[t]} ${TAG_LABEL[t]}</span>`).join(' ')}</td>
-      <td style="text-align:center">${r.emps.join(', ')}</td>
+      <td style="text-align:center">${(r.designEmps&&r.designEmps.length?r.designEmps:['—']).join(', ')}</td>
     </tr>`).join('');
 
   document.getElementById('jobPageNum').textContent=jobPage;
