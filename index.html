@@ -230,11 +230,12 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
       <select id="jobTypeFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— ประเภทงาน ทั้งหมด —</option>
-        <option value="design">🎨 ออกแบบสื่อ</option>
-        <option value="photo">📷 ถ่ายภาพ</option>
+        <option value="designVid">🎨 ออกแบบสื่อ (วิดีโอ/คลิปสั้น)</option>
+        <option value="photo">📷 ถ่ายภาพ (ภาพนิ่ง/วิดีโอ)</option>
         <option value="video">🎬 ตัดต่อวิดีโอ</option>
-        <option value="soat">🔊 โสตฯ/อื่นๆ</option>
-        <option value="pr">📣 ประชาสัมพันธ์</option>
+        <option value="soat1">🔊 ติดตั้งและควบคุมอุปกรณ์โสตฯ</option>
+        <option value="soat2">🔊 ผลิตรายการ/สื่อโสตฯ</option>
+        <option value="soat3">🔊 อื่นๆ (ที่เกี่ยวข้องกับงานโสตฯ)</option>
       </select>
       <select id="jobEmpFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>
@@ -424,21 +425,28 @@ function buildDB(csv) {
     const isSoat   = !!(soat1Emp || soat2Emp || soat3Emp);
     const isPr     = prEmpList.length > 0;
 
-    // หา tags
+    // tags ละเอียด — ตาม col จริง (ไม่รวม design ภาพนิ่ง col10)
     const tags = [];
-    if (isDesign) tags.push('design');
-    if (isPhoto)  tags.push('photo');
-    if (isVideo)  tags.push('video');
-    if (isSoat)   tags.push('soat');
-    if (isPr)     tags.push('pr');
+    if (designVEmp) tags.push('designVid'); // col 11: ออกแบบสื่อ (วิดีโอ)
+    if (photoEmp)   tags.push('photo');     // col 12: ถ่ายภาพ
+    if (videoEmp)   tags.push('video');     // col 13: ตัดต่อวิดีโอ
+    if (soat1Emp)   tags.push('soat1');     // col 14: ติดตั้งโสตฯ
+    if (soat2Emp)   tags.push('soat2');     // col 15: ผลิตรายการ
+    if (soat3Emp)   tags.push('soat3');     // col 16: อื่นๆ โสตฯ
+    if (isPr)       tags.push('pr');        // col 17-30: ประชาสัมพันธ์
+
+    // isDesign ยังใช้สำหรับ KPI/chart (รวม col 10+11)
+    // isPhoto/isVideo/isSoat ใช้สำหรับ KPI/chart เหมือนเดิม
 
     // taskEmps: แมป tag → ผู้รับผิดชอบหลัก
     const taskEmps = {
-      design: [designEmp, designVEmp].filter(Boolean),
-      photo:  photoEmp ? [photoEmp] : [],
-      video:  videoEmp ? [videoEmp] : [],
-      soat:   [soat1Emp, soat2Emp, soat3Emp].filter(Boolean),
-      pr:     prEmpList
+      designVid: designVEmp ? [designVEmp] : [],
+      photo:     photoEmp   ? [photoEmp]   : [],
+      video:     videoEmp   ? [videoEmp]   : [],
+      soat1:     soat1Emp   ? [soat1Emp]   : [],
+      soat2:     soat2Emp   ? [soat2Emp]   : [],
+      soat3:     soat3Emp   ? [soat3Emp]   : [],
+      pr:        prEmpList
     };
 
     // emps รวม = ทุกคนที่มีส่วนร่วมในงานนี้ (unique)
@@ -451,7 +459,13 @@ function buildDB(csv) {
     yearSet.add(year); monthSet.add(ym);
 
     // store raw
-    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, emps, taskEmps, year, ym });
+    // เก็บ soat sub-cols ไว้ filter แยกได้
+    const soatCols = [
+      clean(row[14]),  // ติดตั้งโสตฯ
+      clean(row[15]),  // ผลิตรายการ
+      clean(row[16]),  // อื่นๆ โสตฯ
+    ];
+    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, emps, taskEmps, soatCols, year, ym });
 
     // aggregate per employee — นับเฉพาะ task ที่ตัวเองทำ
     const addEmp = (emp, field) => {
@@ -654,8 +668,8 @@ function update() {
 // ============================================================
 // JOB TABLE
 // ============================================================
-const TAG_ICON  = { design:'🎨', photo:'📷', video:'🎬', soat:'🔊', pr:'📣' };
-const TAG_LABEL = { design:'ออกแบบสื่อ', photo:'ถ่ายภาพ', video:'ตัดต่อวิดีโอ', soat:'โสตฯ/อื่นๆ', pr:'ประชาสัมพันธ์' };
+const TAG_ICON  = { designVid:'🎨', photo:'📷', video:'🎬', soat1:'🔊', soat2:'🔊', soat3:'🔊', pr:'📣' };
+const TAG_LABEL = { designVid:'ออกแบบสื่อ (วิดีโอ)', photo:'ถ่ายภาพ', video:'ตัดต่อวิดีโอ', soat1:'ติดตั้งโสตฯ', soat2:'ผลิตรายการ', soat3:'โสตฯ อื่นๆ', pr:'ประชาสัมพันธ์' };
 
 function buildJobTable() {
   if (!DB) return;
@@ -691,7 +705,19 @@ function renderJobTable() {
 
   const rows = DB.rawRows.filter(r => {
     if (!tblKeys.includes(r.ym) && !tblKeys.some(k => r.ym.startsWith(k))) return false;
-    if (typeFilter && !r.tags.includes(typeFilter)) return false;
+    if (typeFilter) {
+      // map option value → taskEmps sub-key
+      const TYPE_MAP = {
+        'designVid': (r) => (r.taskEmps?.design||[]).length > 0,
+        'photo':     (r) => (r.taskEmps?.photo||[]).length > 0,
+        'video':     (r) => (r.taskEmps?.video||[]).length > 0,
+        'soat1':     (r) => !!(r.soatCols?.[0]),
+        'soat2':     (r) => !!(r.soatCols?.[1]),
+        'soat3':     (r) => !!(r.soatCols?.[2]),
+      };
+      const checkFn = TYPE_MAP[typeFilter];
+      if (!checkFn || !checkFn(r)) return false;
+    }
     if (empFilter) {
       const allEmpsInRow = [...r.emps, ...Object.values(r.taskEmps||{}).flat()];
       if (!allEmpsInRow.some(e=>e===empFilter)) return false;
@@ -700,13 +726,16 @@ function renderJobTable() {
     if (search && !r.jobDetail.toLowerCase().includes(search) &&
                   !r.jobId.toLowerCase().includes(search) &&
                   !r.owner.toLowerCase().includes(search)) return false;
-    // filter ตาม state
-    // ถ้าไม่มี tags เลย (parse ไม่ได้) ให้แสดงด้วย
+    // filter ตาม state toggle buttons
     if (r.tags.length === 0) return true;
-    const visibleTags = r.tags.filter(t =>
-      (t==='design'&&state.showDesign)||(t==='photo'&&state.showPhoto)||
-      (t==='video'&&state.showVideo)||(t==='soat'&&state.showSoat)||(t==='pr'&&state.showPr)
-    );
+    const visibleTags = r.tags.filter(t => {
+      if ((t==='designVid') && state.showDesign) return true;
+      if (t==='photo'  && state.showPhoto)  return true;
+      if (t==='video'  && state.showVideo)  return true;
+      if ((t==='soat1'||t==='soat2'||t==='soat3') && state.showSoat) return true;
+      if (t==='pr'     && state.showPr)     return true;
+      return false;
+    });
     return visibleTags.length > 0;
   });
 
