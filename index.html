@@ -438,12 +438,12 @@ function buildDB(csv) {
     // isDesign ยังใช้สำหรับ KPI/chart (รวม col 10+11)
     // isPhoto/isVideo/isSoat ใช้สำหรับ KPI/chart เหมือนเดิม
 
-    // taskEmps: แมป tag → ผู้รับผิดชอบหลัก (key ต้องสอดคล้องกับ tags)
+    // taskEmps: col 10-16 (ไม่รวม PR)
     const taskEmps = {
-      design: [...new Set([designEmp, designVEmp].filter(Boolean))],
-      photo:  photoEmp  ? [photoEmp]  : [],
-      video:  videoEmp  ? [videoEmp]  : [],
-      soat:   [...new Set([soat1Emp, soat2Emp, soat3Emp].filter(Boolean))],
+      design: [...new Set([designEmp, designVEmp].filter(Boolean))],  // col 10+11
+      photo:  photoEmp   ? [photoEmp]   : [],   // col 12: ถ่ายภาพ
+      video:  videoEmp   ? [videoEmp]   : [],   // col 13: ตัดต่อวิดีโอ
+      soat:   [...new Set([soat1Emp, soat2Emp, soat3Emp].filter(Boolean))], // col 14-16
       pr:     prEmpList
     };
 
@@ -746,11 +746,12 @@ function renderJobTable() {
   const tbody = document.getElementById('jobTbody');
   const startNo = (jobPage-1)*PAGE_SIZE + 1;
   tbody.innerHTML = pageRows.map((r, idx) => {
-    // ผู้รับผิดชอบหลัก = รวมชื่อจาก taskEmps ของ tags ที่แสดงอยู่ (unique)
+    // ผู้รับผิดชอบหลัก = ดึงเฉพาะ col 11-16 (วิดีโอ/ถ่ายภาพ/ตัดต่อ/โสตฯ) ไม่รวม PR
+    const MAIN_KEYS = ['design','photo','video','soat'];
     const mainEmps = [...new Set(
-      r.tags.flatMap(t => (r.taskEmps && r.taskEmps[t]) ? r.taskEmps[t] : [])
+      MAIN_KEYS.flatMap(k => (r.taskEmps && r.taskEmps[k]) ? r.taskEmps[k] : [])
     )].filter(Boolean);
-    const mainEmpStr = mainEmps.length ? mainEmps.join(', ') : r.emps.filter(e=>e!=='ไม่ระบุ').join(', ') || '—';
+    const mainEmpStr = mainEmps.length ? mainEmps.join(', ') : '—';
     return `<tr>
       <td style="text-align:center;color:var(--t3);font-size:11px">${startNo+idx}</td>
       <td>${r.jobDetail || r.jobId || '—'}</td>
