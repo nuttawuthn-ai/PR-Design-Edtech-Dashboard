@@ -502,11 +502,11 @@ function getKeys() {
 // ============================================================
 function getEmpData(emp) {
   let d=0, ph=0, v=0, s=0, pr=0;
-  const keys = getKeys();
+  const empKeys = getKeys();
   // นับจาก rawRows — 1 งาน = 1 ครั้ง ไม่นับซ้ำ
   DB.rawRows.forEach(r => {
     if (!r.emps.includes(emp)) return;
-    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return;
+    if (!empKeys.includes(r.ym) && !empKeys.some(k => r.ym.startsWith(k))) return;
     if (r.tags.includes('design')) d++;
     if (r.tags.includes('photo'))  ph++;
     if (r.tags.includes('video'))  v++;
@@ -528,9 +528,9 @@ function update() {
 
   // KPI — นับจาก rawRows โดยตรง (1 งาน = 1 ครั้ง ไม่นับซ้ำต่อ emp)
   let tDesign=0, tPhoto=0, tVideo=0, tSoat=0, tPr=0;
-  const keys = getKeys();
+  const kpiKeys = getKeys();
   DB.rawRows.forEach(r => {
-    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return;
+    if (!kpiKeys.includes(r.ym) && !kpiKeys.some(k => r.ym.startsWith(k))) return;
     if (state.showDesign && r.tags.includes('design')) tDesign++;
     if (state.showPhoto  && r.tags.includes('photo'))  tPhoto++;
     if (state.showVideo  && r.tags.includes('video'))  tVideo++;
@@ -570,11 +570,11 @@ function update() {
   });
 
   // Timeline chart
-  const keys = state.periodType === 'year'
+  const tlKeys = state.periodType === 'year'
     ? [...DB.years].sort((a,b)=>Number(b)-Number(a))
     : DB.months;
-  const labels = keys;
-  const getData = (field) => keys.map(k => {
+  const labels = tlKeys;
+  const getData = (field) => tlKeys.map(k => {
     if (state.periodType === 'year') {
       // นับจาก rawRows ต่อปี ไม่ซ้ำต่อ emp
       return DB.rawRows.filter(r => r.ym.startsWith(k) && r.tags.includes(field)).length;
@@ -662,10 +662,10 @@ function renderJobTable() {
   const empFilter   = document.getElementById('jobEmpFilter').value;
   const ownerFilter = document.getElementById('jobOwnerFilter').value;
   const search      = document.getElementById('jobSearch').value.toLowerCase().trim();
-  const keys        = getKeys();
+  const tblKeys = getKeys();
 
   const rows = DB.rawRows.filter(r => {
-    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return false;
+    if (!tblKeys.includes(r.ym) && !tblKeys.some(k => r.ym.startsWith(k))) return false;
     if (typeFilter && !r.tags.includes(typeFilter)) return false;
     if (empFilter  && !r.emps.some(e=>e===empFilter)) return false;
     if (ownerFilter && r.owner !== ownerFilter)       return false;
