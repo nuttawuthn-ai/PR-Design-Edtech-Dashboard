@@ -273,6 +273,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
     <table class="job-table" id="jobTable" style="width:100%">
       <thead>
         <tr>
+          <th style="width:44px;text-align:center">ลำดับ</th>
           <th style="min-width:200px">ชื่องาน / รหัส</th>
           <th style="min-width:110px">วันที่มอบหมาย</th>
           <th style="min-width:110px">วันที่รับงาน</th>
@@ -873,8 +874,9 @@ function renderJobTable(){
   const jobPage=Math.min(jobCurrentPage,totalPages);
   const pageRows=rows.slice((jobPage-1)*PAGE_SIZE,jobPage*PAGE_SIZE);
 
-  document.getElementById('jobTbody').innerHTML=pageRows.map(r=>`
+  document.getElementById('jobTbody').innerHTML=pageRows.map((r,i)=>`
     <tr>
+      <td style="text-align:center;color:#a0aec0;font-size:11px;font-weight:600">${(jobPage-1)*PAGE_SIZE+i+1}</td>
       <td>${r.jobDetail||r.jobId||'—'}</td>
       <td style="white-space:nowrap">${r.assignDate||'—'}</td>
       <td style="white-space:nowrap">${r.recvDate||'—'}</td>
