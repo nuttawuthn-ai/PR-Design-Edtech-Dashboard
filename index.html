@@ -415,9 +415,10 @@ function buildDB(csv) {
     if (isPr)     tags.push('pr');
 
     // หา employee list
+    const splitEmps = (str) => str.split(/[,\n\r]/).map(e=>e.trim()).filter(e=>e.length>0);
     const emps = [];
-    if (empDesign) empDesign.split(/[,\n]/).map(e=>e.trim()).filter(Boolean).forEach(e=>emps.push(e));
-    if (empExhibit) empExhibit.split(/[,\n]/).map(e=>e.trim()).filter(Boolean).forEach(e=>{if(!emps.includes(e))emps.push(e);});
+    if (empDesign)  splitEmps(empDesign).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
+    if (empExhibit) splitEmps(empExhibit).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
     if (!emps.length) emps.push('ไม่ระบุ');
 
     emps.forEach(emp => empAllSet.add(emp));
@@ -679,6 +680,8 @@ function renderJobTable() {
                   !r.jobId.toLowerCase().includes(search) &&
                   !r.owner.toLowerCase().includes(search)) return false;
     // filter ตาม state
+    // ถ้าไม่มี tags เลย (parse ไม่ได้) ให้แสดงด้วย
+    if (r.tags.length === 0) return true;
     const visibleTags = r.tags.filter(t =>
       (t==='design'&&state.showDesign)||(t==='photo'&&state.showPhoto)||
       (t==='video'&&state.showVideo)||(t==='soat'&&state.showSoat)||(t==='pr'&&state.showPr)
