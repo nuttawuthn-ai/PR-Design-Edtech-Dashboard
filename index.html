@@ -468,6 +468,9 @@ function buildDB(csv){
   const sortedMonths=years.flatMap(y=>months.filter(m=>m.startsWith(y)).sort((a,b)=>a.localeCompare(b)));
   const employees=[...empAllSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
 
+  // เรียง rawRows จากวันที่ล่าสุดก่อน
+  rawRows.sort((a,b)=>b.ym.localeCompare(a.ym)||b.assignDate.localeCompare(a.assignDate));
+
   return{years,months:sortedMonths,employees,emp_year,emp_month,monthly_totals,rawRows};
 }
 
