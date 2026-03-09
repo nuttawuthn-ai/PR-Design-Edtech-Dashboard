@@ -529,23 +529,16 @@ function update() {
 
   const empData = DB.employees.map(e => ({ name:e, ...getEmpData(e) }));
 
-  // KPI
+  // KPI — นับจาก rawRows โดยตรง (1 งาน = 1 ครั้ง ไม่นับซ้ำต่อ emp)
   let tDesign=0, tPhoto=0, tVideo=0, tSoat=0, tPr=0;
-  DB.employees.forEach(emp => {
-    const yrs = state.period === 'ทั้งหมด' ? DB.years
-              : state.periodType === 'year' ? [state.period]
-              : null;
-    const mths = !yrs ? (state.period === 'ทั้งหมด' ? DB.months : DB.months.filter(m=>m.startsWith(state.period))) : null;
-
-    const accumulate = (rec) => {
-      if (state.showDesign) tDesign += rec.design||0;
-      if (state.showPhoto)  tPhoto  += rec.photo||0;
-      if (state.showVideo)  tVideo  += rec.video||0;
-      if (state.showSoat)   tSoat   += rec.soat||0;
-      if (state.showPr)     tPr     += rec.pr||0;
-    };
-    if (yrs) yrs.forEach(y => accumulate((DB.emp_year[emp]||{})[y]||{}));
-    else mths.forEach(m => accumulate((DB.emp_month[emp]||{})[m]||{}));
+  const keys = getKeys();
+  DB.rawRows.forEach(r => {
+    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return;
+    if (state.showDesign && r.tags.includes('design')) tDesign++;
+    if (state.showPhoto  && r.tags.includes('photo'))  tPhoto++;
+    if (state.showVideo  && r.tags.includes('video'))  tVideo++;
+    if (state.showSoat   && r.tags.includes('soat'))   tSoat++;
+    if (state.showPr     && r.tags.includes('pr'))     tPr++;
   });
 
   setNum('k-design', tDesign);
@@ -586,7 +579,8 @@ function update() {
   const labels = keys;
   const getData = (field) => keys.map(k => {
     if (state.periodType === 'year') {
-      return DB.employees.reduce((s,emp)=>s+((DB.emp_year[emp]||{})[k]||{})[field]||0, 0);
+      // นับจาก rawRows ต่อปี ไม่ซ้ำต่อ emp
+      return DB.rawRows.filter(r => r.ym.startsWith(k) && r.tags.includes(field)).length;
     } else {
       return (DB.monthly_totals[k]||{})[field]||0;
     }
