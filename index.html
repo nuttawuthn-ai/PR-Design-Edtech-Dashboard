@@ -205,7 +205,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
   <div class="card" style="display:flex;flex-direction:column">
     <div class="ch">
-      <div class="ct"><span class="ico">🏅</span> สัดส่วนรายบุคคล</div>
+      <div class="ct"><span class="ico">🏅</span> จำนวนงานตามเจ้าของ</div>
     </div>
     <div id="rankBars" class="rank-bars" style="flex:1"></div>
   </div>
@@ -425,15 +425,21 @@ function buildDB(csv) {
     const isSoat   = !!(soat1Emp || soat2Emp || soat3Emp);
     const isPr     = prEmpList.length > 0;
 
-    // tags ละเอียด — ตาม col จริง (ไม่รวม design ภาพนิ่ง col10)
+    // tags หลัก — ใช้สำหรับ KPI / chart / filter
     const tags = [];
-    if (designVEmp) tags.push('designVid'); // col 11: ออกแบบสื่อ (วิดีโอ)
-    if (photoEmp)   tags.push('photo');     // col 12: ถ่ายภาพ
-    if (videoEmp)   tags.push('video');     // col 13: ตัดต่อวิดีโอ
-    if (soat1Emp)   tags.push('soat1');     // col 14: ติดตั้งโสตฯ
-    if (soat2Emp)   tags.push('soat2');     // col 15: ผลิตรายการ
-    if (soat3Emp)   tags.push('soat3');     // col 16: อื่นๆ โสตฯ
-    if (isPr)       tags.push('pr');        // col 17-30: ประชาสัมพันธ์
+    if (isDesign)  tags.push('design'); // col 10+11
+    if (isPhoto)   tags.push('photo');  // col 12
+    if (isVideo)   tags.push('video');  // col 13
+    if (isSoat)    tags.push('soat');   // col 14+15+16
+    if (isPr)      tags.push('pr');     // col 17-30
+    // sub-tags ละเอียด สำหรับ TYPE_MAP filter ในตาราง
+    const subTags = [];
+    if (designVEmp) subTags.push('designVid');
+    if (photoEmp)   subTags.push('photo');
+    if (videoEmp)   subTags.push('video');
+    if (soat1Emp)   subTags.push('soat1');
+    if (soat2Emp)   subTags.push('soat2');
+    if (soat3Emp)   subTags.push('soat3');
 
     // isDesign ยังใช้สำหรับ KPI/chart (รวม col 10+11)
     // isPhoto/isVideo/isSoat ใช้สำหรับ KPI/chart เหมือนเดิม
@@ -463,7 +469,7 @@ function buildDB(csv) {
       clean(row[15]),  // ผลิตรายการ
       clean(row[16]),  // อื่นๆ โสตฯ
     ];
-    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, emps, taskEmps, soatCols, year, ym });
+    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, subTags, emps, taskEmps, soatCols, year, ym });
 
     // aggregate per employee — นับเฉพาะ task ที่ตัวเองทำ
     const addEmp = (emp, field) => {
@@ -590,25 +596,30 @@ function update() {
   const pLabel = state.period === 'ทั้งหมด' ? (state.periodType==='year'?'ทุกปี':'ทุกเดือน') : state.period;
   document.getElementById('chartPeriodLabel').textContent = pLabel;
 
-  // Rank bars
-  const sorted = [...empData].sort((a,b) => (b.designTotal+b.pr)-(a.designTotal+a.pr));
+  // Rank bars — เจ้าของงาน (owner) นับจาก rawRows
+  const ownerCount = {};
+  const kpiKeysForRank = kpiKeys;
+  DB.rawRows.forEach(r => {
+    if (!kpiKeysForRank.includes(r.ym) && !kpiKeysForRank.some(k=>r.ym.startsWith(k))) return;
+    if (!r.owner || r.owner==='ไม่ระบุ') return;
+    ownerCount[r.owner] = (ownerCount[r.owner]||0) + 1;
+  });
+  const ownerSorted = Object.entries(ownerCount).sort((a,b)=>b[1]-a[1]);
   const rankDiv = document.getElementById('rankBars');
   rankDiv.innerHTML = '';
-  const maxVal = Math.max(...sorted.map(e=>e.designTotal+e.pr), 1);
-  sorted.forEach(e => {
-    const total = e.designTotal + e.pr;
-    if (total === 0) return;
-    const dPct  = (e.designTotal/maxVal*100).toFixed(1);
-    const pPct  = (e.pr/maxVal*100).toFixed(1);
+  const maxOwner = Math.max(...ownerSorted.map(o=>o[1]), 1);
+  ownerSorted.forEach(([name, cnt]) => {
+    const pct = (cnt/maxOwner*100).toFixed(1);
     const div = document.createElement('div');
     div.className = 'rb-row';
     div.innerHTML = `
-      <div class="rb-name">${e.name}</div>
+      <div class="rb-name" title="${name}">${name}</div>
       <div class="rb-track">
-        ${e.designTotal>0?`<div class="rb-seg" style="width:${dPct}%;background:linear-gradient(90deg,#7c9ef5,#56ccb2)"><span style="color:#fff;font-size:9px;padding:0 3px">${e.designTotal}</span></div>`:''}
-        ${e.pr>0?`<div class="rb-seg" style="width:${pPct}%;background:linear-gradient(90deg,#9f7aea,#f687b3)"><span style="color:#000;font-size:9px;padding:0 3px">${e.pr}</span></div>`:''}
+        <div class="rb-seg" style="width:${pct}%;background:linear-gradient(90deg,#00e5b0,#00cfff)">
+          <span style="color:#000;font-size:9px;padding:0 3px">${cnt}</span>
+        </div>
       </div>
-      <div class="rb-total">${total}</div>`;
+      <div class="rb-total">${cnt}</div>`;
     rankDiv.appendChild(div);
   });
 
@@ -712,12 +723,12 @@ function renderJobTable() {
     if (typeFilter) {
       // map option value → taskEmps sub-key
       const TYPE_MAP = {
-        'designVid': (r) => (r.taskEmps?.design?.length||0) > 0,
-        'photo':     (r) => (r.taskEmps?.photo?.length||0)  > 0,
-        'video':     (r) => (r.taskEmps?.video?.length||0)  > 0,
-        'soat1':     (r) => !!(r.soatCols?.[0]),
-        'soat2':     (r) => !!(r.soatCols?.[1]),
-        'soat3':     (r) => !!(r.soatCols?.[2]),
+        'designVid': (r) => r.subTags?.includes('designVid'),
+        'photo':     (r) => r.subTags?.includes('photo'),
+        'video':     (r) => r.subTags?.includes('video'),
+        'soat1':     (r) => r.subTags?.includes('soat1'),
+        'soat2':     (r) => r.subTags?.includes('soat2'),
+        'soat3':     (r) => r.subTags?.includes('soat3'),
       };
       const checkFn = TYPE_MAP[typeFilter];
       if (!checkFn || !checkFn(r)) return false;
