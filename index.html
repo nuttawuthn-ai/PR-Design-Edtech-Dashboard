@@ -671,7 +671,7 @@ function renderJobTable() {
   const keys        = getKeys();
 
   const rows = DB.rawRows.filter(r => {
-    if (!keys.includes(r.ym)) return false;
+    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return false;
     if (typeFilter && !r.tags.includes(typeFilter)) return false;
     if (empFilter  && !r.emps.includes(empFilter))  return false;
     if (ownerFilter && r.owner !== ownerFilter)       return false;
