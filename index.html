@@ -22,6 +22,20 @@
 body{background:linear-gradient(135deg,#e8f4fd 0%,#f0f4f8 40%,#fef0f8 100%);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:14px;min-height:100vh}
 .wrap{max-width:1400px;margin:0 auto;padding:24px 20px}
 
+/* ── Skeleton shimmer ── */
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.skel{background:linear-gradient(90deg,#e8edf2 25%,#f5f7fa 50%,#e8edf2 75%);background-size:600px 100%;animation:shimmer 1.4s infinite linear;border-radius:8px}
+
+/* ── Update badge ── */
+#updateBadge{
+  display:none;position:fixed;bottom:20px;right:20px;z-index:999;
+  background:#5a7ef5;color:#fff;font-size:12px;font-weight:600;
+  padding:8px 16px;border-radius:20px;box-shadow:0 4px 16px rgba(90,126,245,.4);
+  align-items:center;gap:8px;cursor:default;
+}
+#updateBadge.show{display:flex}
+.update-spin{width:12px;height:12px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+
 /* Header */
 .hdr{padding:24px 28px 20px;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);border-radius:16px;margin-bottom:20px;border:1px solid rgba(99,179,237,.2);position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(66,153,225,.1)}
 .hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7c9ef5,#56ccb2,#9f7aea,#f6ad55)}
@@ -69,7 +83,6 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .kpi.k2::after{background:linear-gradient(90deg,#f687b3,#fbb6ce)}
 .kpi.k-soat::after{background:linear-gradient(90deg,#f6ad55,#fbd38d)}
 .kpi.k-pr::after{background:linear-gradient(90deg,#9f7aea,#b794f4)}
-.kpi.k3::after{background:linear-gradient(90deg,#a78bfa,var(--a1))}
 .kpi-ico{font-size:22px;margin-bottom:8px}
 .kpi-n{font-size:32px;font-weight:800;line-height:1}
 .kpi.k1 .kpi-n{color:#4c6ef5}
@@ -77,8 +90,11 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .kpi.k2 .kpi-n{color:#d6336c}
 .kpi.k-soat .kpi-n{color:#dd6b20}
 .kpi.k-pr .kpi-n{color:#6b46c1}
-.kpi.k3 .kpi-n{color:#a78bfa}
 .kpi-l{font-size:11px;color:var(--t2);margin-top:4px;font-weight:500}
+
+/* Skeleton KPI */
+.kpi-skel-n{height:36px;width:60px;margin:8px 0 6px}
+.kpi-skel-l{height:12px;width:80px}
 
 /* Cards / Grid */
 .card{background:#ffffff;border:none;border-radius:16px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,.07)}
@@ -101,12 +117,8 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .job-table td:last-child{border-radius:0 8px 8px 0}
 .job-table tr:hover td{background:#ebf4ff}
 
-/* Loading/Error */
-.loading-wrap{display:flex;align-items:center;justify-content:center;min-height:200px;gap:12px}
-.loading-text{color:var(--t2);font-size:13px;letter-spacing:1px}
+/* Error */
 #errorMsg{display:none;background:#fff5f5;border:1px solid #feb2b2;color:#c53030;padding:12px 18px;border-radius:10px;margin:16px 0;font-size:13px}
-.spin{width:20px;height:20px;border:2px solid rgba(0,0,0,.1);border-top-color:#5a7ef5;border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 
 /* Rank bars */
 .rank-bars{display:flex;flex-direction:column;gap:8px}
@@ -123,20 +135,23 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .tag.video{background:#fff0f6;color:#d6336c}
 .tag.soat{background:#fffaf0;color:#dd6b20}
 .tag.pr{background:#f5f0ff;color:#6b46c1}
+
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 <div class="wrap" id="mainWrap">
 
-<!-- Loading -->
-<div id="loadingWrap" class="loading-wrap">
-  <div class="spin"></div>
-  <span class="loading-text">⏳ กำลังโหลดข้อมูลจาก Google Sheets...</span>
+<!-- Update badge (แสดงตอน background refresh) -->
+<div id="updateBadge">
+  <div class="update-spin"></div>
+  <span>กำลังอัปเดตข้อมูล...</span>
 </div>
+
 <div id="errorMsg"></div>
 
 <!-- Header -->
-<div class="hdr" id="hdrSection" style="display:none">
+<div class="hdr">
   <div class="hdr-tag">📡 Analytics · ฝ่ายเทคโนโลยีการศึกษา</div>
   <h1>งานประชาสัมพันธ์ <em>&</em> โสตทัศนูปกรณ์ <em>Dashboard</em></h1>
   <div class="hdr-sub">วิเคราะห์ภาระงานรายบุคคล · กรองตามช่วงเวลา · แสดงประเภทงาน</div>
@@ -147,8 +162,8 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
 </div>
 
-<!-- Filter bar -->
-<div class="filter-bar" id="filterSection" style="display:none">
+<!-- Filter bar (แสดงทันที แต่ disable ก่อน data พร้อม) -->
+<div class="filter-bar" id="filterSection">
   <div class="filter-group">
     <span class="filter-label">📅 กรองตาม</span>
     <div class="task-toggle">
@@ -180,16 +195,16 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
 </div>
 
-<!-- KPI Row -->
-<div class="kpi-row" id="kpiSection" style="display:none">
-  <div class="kpi k1"><div class="kpi-ico">🎨</div><div class="kpi-n" id="k-design">0</div><div class="kpi-l">ออกแบบสื่อ</div></div>
-  <div class="kpi k-photo"><div class="kpi-ico">📷</div><div class="kpi-n" id="k-photo">0</div><div class="kpi-l">ถ่ายภาพ</div></div>
-  <div class="kpi k2"><div class="kpi-ico">🎬</div><div class="kpi-n" id="k-video">0</div><div class="kpi-l">ตัดต่อวิดีโอ</div></div>
-  <div class="kpi k-soat"><div class="kpi-ico">🔊</div><div class="kpi-n" id="k-soat">0</div><div class="kpi-l">โสตฯ/อื่นๆ</div></div>
-  <div class="kpi k-pr"><div class="kpi-ico">📣</div><div class="kpi-n" id="k-pr">0</div><div class="kpi-l">ประชาสัมพันธ์</div></div>
+<!-- KPI Row — skeleton ก่อน data พร้อม -->
+<div class="kpi-row" id="kpiSection">
+  <div class="kpi k1">   <div class="kpi-ico">🎨</div><div class="kpi-n" id="k-design"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ออกแบบสื่อ</div></div>
+  <div class="kpi k-photo"><div class="kpi-ico">📷</div><div class="kpi-n" id="k-photo"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ถ่ายภาพ</div></div>
+  <div class="kpi k2">   <div class="kpi-ico">🎬</div><div class="kpi-n" id="k-video"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ตัดต่อวิดีโอ</div></div>
+  <div class="kpi k-soat"><div class="kpi-ico">🔊</div><div class="kpi-n" id="k-soat"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">โสตฯ/อื่นๆ</div></div>
+  <div class="kpi k-pr"> <div class="kpi-ico">📣</div><div class="kpi-n" id="k-pr"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ประชาสัมพันธ์</div></div>
 </div>
 
-<div id="mainContent" style="display:none">
+<div id="mainContent">
 
 <div class="sl">แนวโน้มตามเวลา & สัดส่วนรายบุคคล</div>
 <div class="g3" style="margin-bottom:16px">
@@ -198,13 +213,21 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
       <div class="ct"><span class="ico">📈</span> แนวโน้มตามเวลา</div>
       <div class="cb" id="chartPeriodLabel">ทั้งหมด</div>
     </div>
-    <canvas id="timelineChart"></canvas>
+    <!-- skeleton chart placeholder -->
+    <div id="timelineSkel" class="skel" style="height:220px;border-radius:10px"></div>
+    <canvas id="timelineChart" style="display:none"></canvas>
   </div>
   <div class="card" style="display:flex;flex-direction:column">
     <div class="ch">
       <div class="ct"><span class="ico">🏅</span> สัดส่วนรายบุคคล</div>
     </div>
-    <div id="rankBars" class="rank-bars" style="flex:1"></div>
+    <div id="rankBars" class="rank-bars" style="flex:1">
+      <!-- skeleton rank bars -->
+      <div class="rb-row"><div class="skel" style="height:18px;flex:1;border-radius:4px"></div></div>
+      <div class="rb-row"><div class="skel" style="height:18px;flex:1;border-radius:4px"></div></div>
+      <div class="rb-row"><div class="skel" style="height:18px;flex:1;border-radius:4px"></div></div>
+      <div class="rb-row"><div class="skel" style="height:18px;flex:1;border-radius:4px"></div></div>
+    </div>
   </div>
 </div>
 
@@ -212,11 +235,13 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 <div class="g2" style="margin-bottom:16px">
   <div class="card">
     <div class="ch"><div class="ct"><span class="ico">🎨</span> ด้านออกแบบฯ รายบุคคล</div></div>
-    <canvas id="designChart" style="max-height:220px"></canvas>
+    <div id="designSkel" class="skel" style="height:220px;border-radius:10px"></div>
+    <canvas id="designChart" style="max-height:220px;display:none"></canvas>
   </div>
   <div class="card">
     <div class="ch"><div class="ct"><span class="ico">📣</span> ด้านประชาสัมพันธ์ รายบุคคล</div></div>
-    <canvas id="prChart" style="max-height:220px"></canvas>
+    <div id="prSkel" class="skel" style="height:220px;border-radius:10px"></div>
+    <canvas id="prChart" style="max-height:220px;display:none"></canvas>
   </div>
 </div>
 
@@ -273,39 +298,26 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 <script>
 const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwYuaqHkHAgHD5jDJXga8J9C7yQbnklhiDy7GE7yN5t3LeNT4HOaWcCmam8XUNe_WI/exec';
 
+// ── localStorage cache config ──────────────────────────────
+const LS_KEY    = 'dashboard_csv_v2';
+const LS_TS_KEY = 'dashboard_csv_ts_v2';
+const LS_TTL    = 60 * 60 * 1000; // 1 ชั่วโมง (ms)
+
 // column indices (0-based)
 const COL = {
-  timestamp: 0, jobId: 1, jobType: 2, content: 3,
-  assignDate: 4, receiveDate: 5, owner: 6, dept: 7,
-  empDesign: 8,   // ผู้รับมอบหมาย (ออกแบบ/ประชาสัมพันธ์)
-  design: 9,      // ออกแบบสื่อ (ภาพนิ่ง)  ← col 9 จริงๆ
-  designVid: 10,  // ออกแบบสื่อ (วิดีโอ)
-  photo: 11,      // ถ่ายภาพ
-  video: 12,      // ตัดต่อวิดีโอ
-  soat1: 13,      // ติดตั้งโสตฯ
-  soat2: 14,      // ผลิตรายการ
-  soat3: 15,      // อื่นๆ โสตฯ
-  pr1: 16,        // เขียนข่าวไทย
-  pr2: 17,        // เขียนข่าวอังกฤษ
-  pr3: 18,        // พิสูจน์อักษร
-  pr4: 19,        // ต้อนรับต่างชาติ
-  pr5: 20,        // ต้อนรับไทย
-  pr6: 21,        // พิธีกร
-  pr7: 22,        // FB
-  pr8: 23,        // Line OA
-  pr9: 24,        // TikTok
-  pr10: 25,       // IG
-  pr11: 26,       // Web/TV
-  pr12: 27,       // Line Lib-Team
-  pr13: 28,       // ประสานงาน
-  pr14: 29,       // อื่นๆ ประชาสัมพันธ์
-  empExhibit: 30  // ผู้รับมอบหมายนิทรรศการ
+  timestamp:0,jobId:1,jobType:2,content:3,
+  assignDate:4,receiveDate:5,owner:6,dept:7,
+  empDesign:8,design:9,designVid:10,photo:11,video:12,
+  soat1:13,soat2:14,soat3:15,
+  pr1:16,pr2:17,pr3:18,pr4:19,pr5:20,pr6:21,pr7:22,
+  pr8:23,pr9:24,pr10:25,pr11:26,pr12:27,pr13:28,pr14:29,
+  empExhibit:30
 };
 
 let DB = null;
-let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true };
+let state = {periodType:'year',period:'ทั้งหมด',showDesign:true,showPhoto:true,showVideo:true,showSoat:true,showPr:true};
 let jobCurrentPage = 1;
-let timelineChartInst = null, designChartInst = null, prChartInst = null;
+let timelineChartInst=null, designChartInst=null, prChartInst=null;
 
 Chart.defaults.font.family = "'Sarabun', sans-serif";
 Chart.defaults.color = '#718096';
@@ -313,256 +325,225 @@ Chart.defaults.color = '#718096';
 // ============================================================
 // UTILS
 // ============================================================
-function setNum(id, n) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = n.toLocaleString();
+function setNum(id,n){
+  const el=document.getElementById(id);
+  if(el) el.textContent=n.toLocaleString();
 }
-function showLoading(v) {
-  document.getElementById('loadingWrap').style.display = v ? 'flex' : 'none';
-  ['hdrSection','filterSection','kpiSection','mainContent'].forEach(id => {
-    document.getElementById(id).style.display = v ? 'none' : '';
+
+function showUpdateBadge(v){
+  const b=document.getElementById('updateBadge');
+  b.classList.toggle('show',v);
+}
+
+function showError(msg){
+  const el=document.getElementById('errorMsg');
+  el.textContent='❌ '+msg;
+  el.style.display='block';
+}
+
+// ซ่อน skeleton แล้วแสดง canvas จริง
+function revealCharts(){
+  ['timeline','design','pr'].forEach(id=>{
+    const sk=document.getElementById(id+'Skel');
+    const cv=document.getElementById(id+'Chart');
+    if(sk) sk.style.display='none';
+    if(cv) cv.style.display='';
   });
-}
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = '❌ ' + msg;
-  el.style.display = 'block';
 }
 
 // ============================================================
 // CSV PARSER
 // ============================================================
-function parseCSVLine(line) {
-  const result = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
-      else inQ = !inQ;
-    } else if (ch === ',' && !inQ) {
-      result.push(cur.trim()); cur = '';
-    } else { cur += ch; }
+function parseCSVLine(line){
+  const result=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(ch===','&&!inQ){result.push(cur.trim());cur='';}
+    else{cur+=ch;}
   }
   result.push(cur.trim());
   return result;
 }
 
-function clean(v) { return (v || '').replace(/"/g, '').trim(); }
-function hasVal(v) { return clean(v).length > 0 && clean(v) !== '0' && clean(v).toLowerCase() !== 'false'; }
+function clean(v){return(v||'').replace(/"/g,'').trim();}
 
 // ============================================================
 // BUILD DB
 // ============================================================
-function buildDB(csv) {
-  const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
-  // skip header row
-  const rawRows = [];
-  const empDesignSet = new Set(), empPrSet = new Set(), empAllSet = new Set();
-  // empAllSet จะถูก populate จาก task columns เท่านั้น (ไม่รวม 'ไม่ระบุ')
-  const yearSet = new Set(), monthSet = new Set();
+function buildDB(csv){
+  const lines=csv.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+  const rawRows=[];
+  const empAllSet=new Set(),yearSet=new Set(),monthSet=new Set();
+  const emp_year={},emp_month={},monthly_totals={};
 
-  // aggregates: emp → year/month → counts
-  const emp_year = {}, emp_month = {};
-  const monthly_totals = {};
+  for(let i=1;i<lines.length;i++){
+    const row=parseCSVLine(lines[i]);
+    if(row.length<5) continue;
 
-  for (let i = 1; i < lines.length; i++) {
-    const row = parseCSVLine(lines[i]);
-    if (row.length < 5) continue;
+    const assignDate=clean(row[COL.assignDate]);
+    const timestamp=clean(row[COL.timestamp]);
+    let dateStr=assignDate||timestamp;
+    let year='',ym='';
 
-    const timestamp  = clean(row[COL.timestamp]);
-    const jobId      = clean(row[COL.jobId]);
-    const owner      = clean(row[COL.owner]);
-    const assignDate = clean(row[COL.assignDate]);
-    const recvDate   = clean(row[COL.receiveDate]);
-    const jobDetail  = clean(row[3]) || clean(row[1]);  // เนื้อหา หรือ รหัสงาน
-    const empDesign  = clean(row[COL.empDesign]);
-    const empExhibit = clean(row[COL.empExhibit]);
-
-    // parse date from assignDate or timestamp
-    let dateStr = assignDate || timestamp;
-    let year = '', ym = '';
-    if (dateStr) {
-      // รองรับ DD/MM/YYYY, YYYY-MM-DD, DD/MM/YYYY HH:MM:SS
-      let d = null;
-      if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-        d = dateStr.substring(0, 10);
-        year = d.substring(0, 4);
-        ym   = d.substring(0, 7);
-      } else if (dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}/)) {
-        const parts = dateStr.split(/[\/ ]/);
-        const y = parts[2]; const m = parts[1].padStart(2,'0'); const dy = parts[0].padStart(2,'0');
-        year = y; ym = y + '-' + m;
-      } else if (dateStr.match(/^\d{4}/)) {
-        year = dateStr.substring(0,4); ym = dateStr.substring(0,7);
+    if(dateStr){
+      if(dateStr.match(/^\d{4}-\d{2}-\d{2}/)){
+        year=dateStr.substring(0,4);ym=dateStr.substring(0,7);
+      }else if(dateStr.match(/^\d{1,2}\/\d{1,2}\/\d{4}/)){
+        const p=dateStr.split(/[\/ ]/);
+        year=p[2];ym=p[2]+'-'+p[1].padStart(2,'0');
+      }else if(dateStr.match(/^\d{4}/)){
+        year=dateStr.substring(0,4);ym=dateStr.substring(0,7);
       }
     }
-    if (!year || !ym) continue;
+    if(!year||!ym) continue;
 
-    // ฟังก์ชัน: cell มีค่า = task นั้นถูกมอบหมาย (ชื่อสั้น ≤ 40 ตัว)
-    const taskFilled = (v) => { const s = clean(v); return s.length > 0 && s.length <= 40; };
-    const isDesign = taskFilled(row[COL.design]) || taskFilled(row[COL.designVid]);
-    const isPhoto  = taskFilled(row[COL.photo]);
-    const isVideo  = taskFilled(row[COL.video]);
-    const isSoat   = taskFilled(row[COL.soat1]) || taskFilled(row[COL.soat2]) || taskFilled(row[COL.soat3]);
-    const prCols   = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
-                      COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
-    const isPr     = prCols.some(c => taskFilled(row[c]));
+    const taskFilled=(v)=>{const s=clean(v);return s.length>0&&s.length<=40;};
+    const isDesign=taskFilled(row[COL.design])||taskFilled(row[COL.designVid]);
+    const isPhoto=taskFilled(row[COL.photo]);
+    const isVideo=taskFilled(row[COL.video]);
+    const isSoat=taskFilled(row[COL.soat1])||taskFilled(row[COL.soat2])||taskFilled(row[COL.soat3]);
+    const prCols=[COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
+                  COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
+    const isPr=prCols.some(c=>taskFilled(row[c]));
 
-    // designEmps/photoEmps ฯลฯ ไม่ได้ใช้แยกต่อ — ใช้ col 8 แทน
-    const designEmps=[], photoEmps=[], videoEmps=[], soatEmps=[], prEmps=[];
+    const tags=[];
+    if(isDesign) tags.push('design');
+    if(isPhoto)  tags.push('photo');
+    if(isVideo)  tags.push('video');
+    if(isSoat)   tags.push('soat');
+    if(isPr)     tags.push('pr');
 
-    // หา tags
-    const tags = [];
-    if (isDesign) tags.push('design');
-    if (isPhoto)  tags.push('photo');
-    if (isVideo)  tags.push('video');
-    if (isSoat)   tags.push('soat');
-    if (isPr)     tags.push('pr');
+    const empRaw=clean(row[COL.empDesign]);
+    const emps=empRaw?empRaw.split(',').map(e=>e.trim()).filter(e=>e.length>1&&e.length<=30):[];
+    if(!emps.length) emps.push('ไม่ระบุ');
 
-    // emps มาจาก col 8 (ผู้รับมอบหมาย) split comma เท่านั้น
-    const empRaw = clean(row[COL.empDesign]);
-    const emps = empRaw
-      ? empRaw.split(',').map(e=>e.trim()).filter(e=>e.length>1 && e.length<=30)
-      : [];
-    if (!emps.length) emps.push('ไม่ระบุ');
+    yearSet.add(year);monthSet.add(ym);
 
-    yearSet.add(year); monthSet.add(ym);
-
-    // store raw
-    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, emps, year, ym });
-
-    // aggregate per employee — นับเฉพาะ task ที่ตัวเองทำ
-    const addEmp = (emp, field) => {
-      if (!emp_year[emp]) emp_year[emp] = {};
-      if (!emp_year[emp][year]) emp_year[emp][year] = {design:0,photo:0,video:0,soat:0,pr:0};
-      emp_year[emp][year][field]++;
-      if (!emp_month[emp]) emp_month[emp] = {};
-      if (!emp_month[emp][ym]) emp_month[emp][ym] = {design:0,photo:0,video:0,soat:0,pr:0};
-      emp_month[emp][ym][field]++;
-    };
-    // นับงานต่อ emp โดยดูจาก tags ของงานนั้น
-    emps.filter(e=>e!=='ไม่ระบุ').forEach(e => {
-      empAllSet.add(e);
-      if (isDesign||isPhoto||isVideo||isSoat) empDesignSet.add(e);
-      if (isPr) empPrSet.add(e);
-      if (isDesign) addEmp(e,'design');
-      if (isPhoto)  addEmp(e,'photo');
-      if (isVideo)  addEmp(e,'video');
-      if (isSoat)   addEmp(e,'soat');
-      if (isPr)     addEmp(e,'pr');
+    rawRows.push({
+      jobId:clean(row[COL.jobId]),
+      jobDetail:clean(row[3])||clean(row[1]),
+      owner:clean(row[COL.owner]),
+      assignDate:clean(row[COL.assignDate]),
+      recvDate:clean(row[COL.receiveDate]),
+      tags,emps,year,ym
     });
 
-    // monthly totals
-    if (!monthly_totals[ym]) monthly_totals[ym] = { design:0, photo:0, video:0, soat:0, pr:0 };
-    const mt = monthly_totals[ym];
-    if (isDesign) mt.design++;
-    if (isPhoto)  mt.photo++;
-    if (isVideo)  mt.video++;
-    if (isSoat)   mt.soat++;
-    if (isPr)     mt.pr++;
+    const addEmp=(emp,field)=>{
+      if(!emp_year[emp]) emp_year[emp]={};
+      if(!emp_year[emp][year]) emp_year[emp][year]={design:0,photo:0,video:0,soat:0,pr:0};
+      emp_year[emp][year][field]++;
+      if(!emp_month[emp]) emp_month[emp]={};
+      if(!emp_month[emp][ym]) emp_month[emp][ym]={design:0,photo:0,video:0,soat:0,pr:0};
+      emp_month[emp][ym][field]++;
+    };
+
+    emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>{
+      empAllSet.add(e);
+      if(isDesign) addEmp(e,'design');
+      if(isPhoto)  addEmp(e,'photo');
+      if(isVideo)  addEmp(e,'video');
+      if(isSoat)   addEmp(e,'soat');
+      if(isPr)     addEmp(e,'pr');
+    });
+
+    if(!monthly_totals[ym]) monthly_totals[ym]={design:0,photo:0,video:0,soat:0,pr:0};
+    const mt=monthly_totals[ym];
+    if(isDesign) mt.design++;
+    if(isPhoto)  mt.photo++;
+    if(isVideo)  mt.video++;
+    if(isSoat)   mt.soat++;
+    if(isPr)     mt.pr++;
   }
 
-  const years  = [...yearSet].sort((a,b) => Number(b)-Number(a));
-  const months = [...monthSet];
-  const sortedYears = [...years];
-  const sortedMonths = sortedYears.flatMap(y =>
-    months.filter(m=>m.startsWith(y)).sort((a,b)=>a.localeCompare(b))
-  );
-  const employees = [...empAllSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
+  const years=[...yearSet].sort((a,b)=>Number(b)-Number(a));
+  const months=[...monthSet];
+  const sortedMonths=years.flatMap(y=>months.filter(m=>m.startsWith(y)).sort((a,b)=>a.localeCompare(b)));
+  const employees=[...empAllSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
 
-  return { years, months: sortedMonths, employees, emp_year, emp_month, monthly_totals, rawRows };
+  return{years,months:sortedMonths,employees,emp_year,emp_month,monthly_totals,rawRows};
 }
 
 // ============================================================
 // PERIOD
 // ============================================================
-function buildPeriodSel() {
-  const sel = document.getElementById('periodSel');
-  sel.innerHTML = '';
-  const all = document.createElement('option');
-  all.value = 'ทั้งหมด'; all.textContent = state.periodType === 'year' ? 'ทุกปี' : 'ทุกเดือน';
+function buildPeriodSel(){
+  const sel=document.getElementById('periodSel');
+  sel.innerHTML='';
+  const all=document.createElement('option');
+  all.value='ทั้งหมด';all.textContent=state.periodType==='year'?'ทุกปี':'ทุกเดือน';
   sel.appendChild(all);
-  const items = state.periodType === 'year' ? DB.years : DB.months;
-  items.forEach(v => {
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v; sel.appendChild(o);
-  });
-  sel.value = state.period;
+  const items=state.periodType==='year'?DB.years:DB.months;
+  items.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});
+  sel.value=state.period;
 }
 
-function getKeys() {
-  if (state.period === 'ทั้งหมด') return state.periodType === 'year' ? DB.years : DB.months;
-  if (state.periodType === 'year') return DB.months.filter(m => m.startsWith(state.period));
-  return [state.period];
+function getKeys(){
+  if(state.period==='ทั้งหมด') return state.periodType==='year'?DB.years:DB.months;
+  if(state.periodType==='year') return DB.months.filter(m=>m.startsWith(state.period));
+  return[state.period];
 }
 
 // ============================================================
 // GET EMP DATA
 // ============================================================
-function getEmpData(emp) {
-  let d=0, ph=0, v=0, s=0, pr=0;
-  const keys = getKeys();
-  if (state.periodType === 'year') {
-    const yrs = state.period === 'ทั้งหมด' ? DB.years : [state.period];
-    yrs.forEach(y => {
-      const rec = (DB.emp_year[emp]||{})[y]||{};
-      d+=rec.design||0; ph+=rec.photo||0; v+=rec.video||0; s+=rec.soat||0; pr+=rec.pr||0;
-    });
-  } else {
-    const mths = state.period === 'ทั้งหมด' ? DB.months : DB.months.filter(m=>m.startsWith(state.period));
-    mths.forEach(m => {
-      const rec = (DB.emp_month[emp]||{})[m]||{};
-      d+=rec.design||0; ph+=rec.photo||0; v+=rec.video||0; s+=rec.soat||0; pr+=rec.pr||0;
-    });
+function getEmpData(emp){
+  let d=0,ph=0,v=0,s=0,pr=0;
+  if(state.periodType==='year'){
+    const yrs=state.period==='ทั้งหมด'?DB.years:[state.period];
+    yrs.forEach(y=>{const r=(DB.emp_year[emp]||{})[y]||{};d+=r.design||0;ph+=r.photo||0;v+=r.video||0;s+=r.soat||0;pr+=r.pr||0;});
+  }else{
+    const mths=state.period==='ทั้งหมด'?DB.months:DB.months.filter(m=>m.startsWith(state.period));
+    mths.forEach(m=>{const r=(DB.emp_month[emp]||{})[m]||{};d+=r.design||0;ph+=r.photo||0;v+=r.video||0;s+=r.soat||0;pr+=r.pr||0;});
   }
-  const designTotal = (state.showDesign?d:0)+(state.showPhoto?ph:0)+(state.showVideo?v:0)+(state.showSoat?s:0);
-  return { design:d, photo:ph, video:v, soat:s, pr, designTotal };
+  const designTotal=(state.showDesign?d:0)+(state.showPhoto?ph:0)+(state.showVideo?v:0)+(state.showSoat?s:0);
+  return{design:d,photo:ph,video:v,soat:s,pr,designTotal};
 }
 
 // ============================================================
 // UPDATE
 // ============================================================
-function update() {
-  if (!DB) return;
-  if (document.getElementById('jobTbody')) renderJobTable();
+function update(){
+  if(!DB) return;
+  revealCharts();
+  if(document.getElementById('jobTbody')) renderJobTable();
 
-  const empData = DB.employees.map(e => ({ name:e, ...getEmpData(e) }));
+  const empData=DB.employees.map(e=>({name:e,...getEmpData(e)}));
 
-  // KPI — นับจาก rawRows โดยตรง (1 งาน = 1 ครั้ง ไม่นับซ้ำต่อ emp)
-  let tDesign=0, tPhoto=0, tVideo=0, tSoat=0, tPr=0;
-  const keys = getKeys();
-  DB.rawRows.forEach(r => {
-    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return;
-    if (state.showDesign && r.tags.includes('design')) tDesign++;
-    if (state.showPhoto  && r.tags.includes('photo'))  tPhoto++;
-    if (state.showVideo  && r.tags.includes('video'))  tVideo++;
-    if (state.showSoat   && r.tags.includes('soat'))   tSoat++;
-    if (state.showPr     && r.tags.includes('pr'))     tPr++;
+  // KPI
+  let tDesign=0,tPhoto=0,tVideo=0,tSoat=0,tPr=0;
+  const keys=getKeys();
+  DB.rawRows.forEach(r=>{
+    if(!keys.includes(r.ym)&&!keys.some(k=>r.ym.startsWith(k))) return;
+    if(state.showDesign&&r.tags.includes('design')) tDesign++;
+    if(state.showPhoto&&r.tags.includes('photo'))   tPhoto++;
+    if(state.showVideo&&r.tags.includes('video'))   tVideo++;
+    if(state.showSoat&&r.tags.includes('soat'))     tSoat++;
+    if(state.showPr&&r.tags.includes('pr'))         tPr++;
   });
 
-  setNum('k-design', tDesign);
-  setNum('k-photo',  tPhoto);
-  setNum('k-video',  tVideo);
-  setNum('k-soat',   tSoat);
-  setNum('k-pr',     tPr);
+  setNum('k-design',tDesign);
+  setNum('k-photo',tPhoto);
+  setNum('k-video',tVideo);
+  setNum('k-soat',tSoat);
+  setNum('k-pr',tPr);
 
-  const pLabel = state.period === 'ทั้งหมด' ? (state.periodType==='year'?'ทุกปี':'ทุกเดือน') : state.period;
-  document.getElementById('chartPeriodLabel').textContent = pLabel;
+  const pLabel=state.period==='ทั้งหมด'?(state.periodType==='year'?'ทุกปี':'ทุกเดือน'):state.period;
+  document.getElementById('chartPeriodLabel').textContent=pLabel;
 
   // Rank bars
-  const sorted = [...empData].sort((a,b) => (b.designTotal+b.pr)-(a.designTotal+a.pr));
-  const rankDiv = document.getElementById('rankBars');
-  rankDiv.innerHTML = '';
-  const maxVal = Math.max(...sorted.map(e=>e.designTotal+e.pr), 1);
-  sorted.forEach(e => {
-    const total = e.designTotal + e.pr;
-    if (total === 0) return;
-    const dPct  = (e.designTotal/maxVal*100).toFixed(1);
-    const pPct  = (e.pr/maxVal*100).toFixed(1);
-    const div = document.createElement('div');
-    div.className = 'rb-row';
-    div.innerHTML = `
+  const sorted=[...empData].sort((a,b)=>(b.designTotal+b.pr)-(a.designTotal+a.pr));
+  const rankDiv=document.getElementById('rankBars');
+  rankDiv.innerHTML='';
+  const maxVal=Math.max(...sorted.map(e=>e.designTotal+e.pr),1);
+  sorted.forEach(e=>{
+    const total=e.designTotal+e.pr;
+    if(total===0) return;
+    const dPct=(e.designTotal/maxVal*100).toFixed(1);
+    const pPct=(e.pr/maxVal*100).toFixed(1);
+    const div=document.createElement('div');
+    div.className='rb-row';
+    div.innerHTML=`
       <div class="rb-name">${e.name}</div>
       <div class="rb-track">
         ${e.designTotal>0?`<div class="rb-seg" style="width:${dPct}%;background:linear-gradient(90deg,#7c9ef5,#56ccb2)"><span style="color:#fff;font-size:9px;padding:0 3px">${e.designTotal}</span></div>`:''}
@@ -573,54 +554,47 @@ function update() {
   });
 
   // Timeline chart
-  const keys = state.periodType === 'year'
-    ? [...DB.years].sort((a,b)=>Number(b)-Number(a))
-    : DB.months;
-  const labels = keys;
-  const getData = (field) => keys.map(k => {
-    if (state.periodType === 'year') {
-      // นับจาก rawRows ต่อปี ไม่ซ้ำต่อ emp
-      return DB.rawRows.filter(r => r.ym.startsWith(k) && r.tags.includes(field)).length;
-    } else {
-      return (DB.monthly_totals[k]||{})[field]||0;
+  const tlKeys=state.periodType==='year'?[...DB.years].sort((a,b)=>Number(b)-Number(a)):DB.months;
+  const getData=(field)=>tlKeys.map(k=>{
+    if(state.periodType==='year'){
+      return DB.rawRows.filter(r=>r.ym.startsWith(k)&&r.tags.includes(field)).length;
     }
+    return(DB.monthly_totals[k]||{})[field]||0;
   });
 
-  const datasets = [];
+  const datasets=[];
   if(state.showDesign) datasets.push({label:'ออกแบบสื่อ',data:getData('design'),backgroundColor:'rgba(124,158,245,0.75)',borderRadius:4,stack:'a'});
-  if(state.showPhoto)  datasets.push({label:'ถ่ายภาพ',   data:getData('photo'), backgroundColor:'rgba(86,204,178,0.75)', borderRadius:4,stack:'a'});
-  if(state.showVideo)  datasets.push({label:'ตัดต่อวิดีโอ',data:getData('video'),backgroundColor:'rgba(246,135,179,0.75)', borderRadius:4,stack:'a'});
-  if(state.showSoat)   datasets.push({label:'โสตฯ',      data:getData('soat'), backgroundColor:'rgba(246,173,85,0.75)', borderRadius:4,stack:'a'});
-  if(state.showPr)     datasets.push({label:'ประชาสัมพันธ์',data:getData('pr'), backgroundColor:'rgba(159,122,234,0.75)', borderRadius:4,stack:'b'});
+  if(state.showPhoto)  datasets.push({label:'ถ่ายภาพ',data:getData('photo'),backgroundColor:'rgba(86,204,178,0.75)',borderRadius:4,stack:'a'});
+  if(state.showVideo)  datasets.push({label:'ตัดต่อวิดีโอ',data:getData('video'),backgroundColor:'rgba(246,135,179,0.75)',borderRadius:4,stack:'a'});
+  if(state.showSoat)   datasets.push({label:'โสตฯ',data:getData('soat'),backgroundColor:'rgba(246,173,85,0.75)',borderRadius:4,stack:'a'});
+  if(state.showPr)     datasets.push({label:'ประชาสัมพันธ์',data:getData('pr'),backgroundColor:'rgba(159,122,234,0.75)',borderRadius:4,stack:'b'});
 
-  if (timelineChartInst) timelineChartInst.destroy();
-  timelineChartInst = new Chart(document.getElementById('timelineChart'),{
-    type:'bar', data:{labels, datasets},
+  if(timelineChartInst) timelineChartInst.destroy();
+  timelineChartInst=new Chart(document.getElementById('timelineChart'),{
+    type:'bar',data:{labels:tlKeys,datasets},
     options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:10,color:'#718096'}}},
       scales:{x:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0',font:{size:10}}},
               y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 
-  // Design per person chart
-  const actDesign = sorted.filter(e=>e.designTotal>0);
-  if (designChartInst) designChartInst.destroy();
-  designChartInst = new Chart(document.getElementById('designChart'),{
-    type:'bar', data:{labels:actDesign.map(e=>e.name), datasets:[
+  const actDesign=sorted.filter(e=>e.designTotal>0);
+  if(designChartInst) designChartInst.destroy();
+  designChartInst=new Chart(document.getElementById('designChart'),{
+    type:'bar',data:{labels:actDesign.map(e=>e.name),datasets:[
       {label:'ออกแบบสื่อ',data:actDesign.map(e=>e.design),backgroundColor:'rgba(124,158,245,0.75)',borderRadius:4,stack:'d'},
-      {label:'ถ่ายภาพ',   data:actDesign.map(e=>e.photo), backgroundColor:'rgba(86,204,178,0.75)', borderRadius:4,stack:'d'},
-      {label:'ตัดต่อวิดีโอ',data:actDesign.map(e=>e.video),backgroundColor:'rgba(246,135,179,0.75)', borderRadius:4,stack:'d'},
-      {label:'โสตฯ',      data:actDesign.map(e=>e.soat), backgroundColor:'rgba(246,173,85,0.75)', borderRadius:4,stack:'d'},
+      {label:'ถ่ายภาพ',data:actDesign.map(e=>e.photo),backgroundColor:'rgba(86,204,178,0.75)',borderRadius:4,stack:'d'},
+      {label:'ตัดต่อวิดีโอ',data:actDesign.map(e=>e.video),backgroundColor:'rgba(246,135,179,0.75)',borderRadius:4,stack:'d'},
+      {label:'โสตฯ',data:actDesign.map(e=>e.soat),backgroundColor:'rgba(246,173,85,0.75)',borderRadius:4,stack:'d'},
     ]},
     options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
       scales:{x:{stacked:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
               y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 
-  // PR per person chart
-  const actPr = sorted.filter(e=>e.pr>0);
-  if (prChartInst) prChartInst.destroy();
-  prChartInst = new Chart(document.getElementById('prChart'),{
-    type:'bar', data:{labels:actPr.map(e=>e.name), datasets:[
+  const actPr=sorted.filter(e=>e.pr>0);
+  if(prChartInst) prChartInst.destroy();
+  prChartInst=new Chart(document.getElementById('prChart'),{
+    type:'bar',data:{labels:actPr.map(e=>e.name),datasets:[
       {label:'ประชาสัมพันธ์',data:actPr.map(e=>e.pr),backgroundColor:'rgba(159,122,234,0.75)',borderRadius:4},
     ]},
     options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
@@ -632,69 +606,59 @@ function update() {
 // ============================================================
 // JOB TABLE
 // ============================================================
-const TAG_ICON  = { design:'🎨', photo:'📷', video:'🎬', soat:'🔊', pr:'📣' };
-const TAG_LABEL = { design:'ออกแบบสื่อ', photo:'ถ่ายภาพ', video:'ตัดต่อวิดีโอ', soat:'โสตฯ/อื่นๆ', pr:'ประชาสัมพันธ์' };
+const TAG_ICON={design:'🎨',photo:'📷',video:'🎬',soat:'🔊',pr:'📣'};
+const TAG_LABEL={design:'ออกแบบสื่อ',photo:'ถ่ายภาพ',video:'ตัดต่อวิดีโอ',soat:'โสตฯ/อื่นๆ',pr:'ประชาสัมพันธ์'};
 
-function buildJobTable() {
-  if (!DB) return;
-  const empSel = document.getElementById('jobEmpFilter');
-  const prevEmp = empSel.value;
-  empSel.innerHTML = '<option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>';
-  DB.employees.forEach(e => {
-    const o = document.createElement('option');
-    o.value = e; o.textContent = e; empSel.appendChild(o);
-  });
-  empSel.value = prevEmp;
+function buildJobTable(){
+  if(!DB) return;
+  const empSel=document.getElementById('jobEmpFilter');
+  const prevEmp=empSel.value;
+  empSel.innerHTML='<option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>';
+  DB.employees.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;empSel.appendChild(o);});
+  empSel.value=prevEmp;
 
-  const ownerSel = document.getElementById('jobOwnerFilter');
-  const prevOwner = ownerSel.value;
-  const owners = [...new Set(DB.rawRows.map(r=>r.owner).filter(Boolean))].sort();
-  ownerSel.innerHTML = '<option value="">— เจ้าของงาน ทั้งหมด —</option>';
-  owners.forEach(o => {
-    const opt = document.createElement('option');
-    opt.value = o; opt.textContent = o; ownerSel.appendChild(opt);
-  });
-  ownerSel.value = prevOwner;
+  const ownerSel=document.getElementById('jobOwnerFilter');
+  const prevOwner=ownerSel.value;
+  const owners=[...new Set(DB.rawRows.map(r=>r.owner).filter(Boolean))].sort();
+  ownerSel.innerHTML='<option value="">— เจ้าของงาน ทั้งหมด —</option>';
+  owners.forEach(o=>{const opt=document.createElement('option');opt.value=o;opt.textContent=o;ownerSel.appendChild(opt);});
+  ownerSel.value=prevOwner;
 
   renderJobTable();
 }
 
-function renderJobTable() {
-  if (!DB) return;
-  const typeFilter  = document.getElementById('jobTypeFilter').value;
-  const empFilter   = document.getElementById('jobEmpFilter').value;
-  const ownerFilter = document.getElementById('jobOwnerFilter').value;
-  const search      = document.getElementById('jobSearch').value.toLowerCase().trim();
-  const keys        = getKeys();
+function renderJobTable(){
+  if(!DB) return;
+  const typeFilter=document.getElementById('jobTypeFilter').value;
+  const empFilter=document.getElementById('jobEmpFilter').value;
+  const ownerFilter=document.getElementById('jobOwnerFilter').value;
+  const search=document.getElementById('jobSearch').value.toLowerCase().trim();
+  const keys=getKeys();
 
-  const rows = DB.rawRows.filter(r => {
-    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return false;
-    if (typeFilter && !r.tags.includes(typeFilter)) return false;
-    if (empFilter  && !r.emps.some(e=>e===empFilter)) return false;
-    if (ownerFilter && r.owner !== ownerFilter)       return false;
-    if (search && !r.jobDetail.toLowerCase().includes(search) &&
-                  !r.jobId.toLowerCase().includes(search) &&
-                  !r.owner.toLowerCase().includes(search)) return false;
-    // filter ตาม state
-    // ถ้าไม่มี tags เลย (parse ไม่ได้) ให้แสดงด้วย
-    if (r.tags.length === 0) return true;
-    const visibleTags = r.tags.filter(t =>
+  const rows=DB.rawRows.filter(r=>{
+    if(!keys.includes(r.ym)&&!keys.some(k=>r.ym.startsWith(k))) return false;
+    if(typeFilter&&!r.tags.includes(typeFilter)) return false;
+    if(empFilter&&!r.emps.some(e=>e===empFilter)) return false;
+    if(ownerFilter&&r.owner!==ownerFilter) return false;
+    if(search&&!r.jobDetail.toLowerCase().includes(search)&&
+               !r.jobId.toLowerCase().includes(search)&&
+               !r.owner.toLowerCase().includes(search)) return false;
+    if(r.tags.length===0) return true;
+    const visibleTags=r.tags.filter(t=>
       (t==='design'&&state.showDesign)||(t==='photo'&&state.showPhoto)||
       (t==='video'&&state.showVideo)||(t==='soat'&&state.showSoat)||(t==='pr'&&state.showPr)
     );
-    return visibleTags.length > 0;
+    return visibleTags.length>0;
   });
 
-  const PAGE_SIZE  = 10;
-  const totalRows  = rows.length;
-  const totalPages = Math.max(1, Math.ceil(totalRows/PAGE_SIZE));
-  const jobPage    = Math.min(jobCurrentPage, totalPages);
-  const pageRows   = rows.slice((jobPage-1)*PAGE_SIZE, jobPage*PAGE_SIZE);
+  const PAGE_SIZE=10;
+  const totalPages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
+  const jobPage=Math.min(jobCurrentPage,totalPages);
+  const pageRows=rows.slice((jobPage-1)*PAGE_SIZE,jobPage*PAGE_SIZE);
 
-  const tbody = document.getElementById('jobTbody');
-  tbody.innerHTML = pageRows.map(r => `
+  document.getElementById('jobTbody').innerHTML=pageRows.map(r=>`
     <tr>
-      <td>${r.jobDetail || r.jobId || '—'}</td>
+      <td>${r.jobDetail||r.jobId||'—'}</td>
       <td style="white-space:nowrap">${r.assignDate||'—'}</td>
       <td style="white-space:nowrap">${r.recvDate||'—'}</td>
       <td>${r.owner||'—'}</td>
@@ -702,87 +666,131 @@ function renderJobTable() {
       <td style="text-align:center">${r.emps.join(', ')}</td>
     </tr>`).join('');
 
-  document.getElementById('jobPageNum').textContent = jobPage;
-  document.getElementById('jobPagePrev').disabled  = jobPage <= 1;
-  document.getElementById('jobPageNext').disabled  = jobPage >= totalPages;
-  document.getElementById('jobCount').textContent  = `หน้า ${jobPage}/${totalPages} · แสดง ${pageRows.length} จาก ${totalRows} รายการ`;
+  document.getElementById('jobPageNum').textContent=jobPage;
+  document.getElementById('jobPagePrev').disabled=jobPage<=1;
+  document.getElementById('jobPageNext').disabled=jobPage>=totalPages;
+  document.getElementById('jobCount').textContent=`หน้า ${jobPage}/${totalPages} · แสดง ${pageRows.length} จาก ${rows.length} รายการ`;
 }
 
-function jobChangePage(dir) {
-  jobCurrentPage = Math.max(1, jobCurrentPage + dir);
+function jobChangePage(dir){
+  jobCurrentPage=Math.max(1,jobCurrentPage+dir);
   renderJobTable();
 }
 
 // ============================================================
-// LOAD DATA
+// ✅ LOAD DATA — Cache-first strategy
 // ============================================================
-function loadData() {
-  showLoading(true);
-  document.getElementById('errorMsg').style.display = 'none';
-  fetch(WEBAPP_URL)
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-    .then(text => {
-      if (!text || text.startsWith('ERROR:')) throw new Error(text || 'ไม่มีข้อมูล');
-      DB = buildDB(text);
-      showLoading(false);
-      const now = new Date();
-      document.getElementById('lastUpdate').textContent =
-        now.toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
-      document.getElementById('totalCount').textContent = DB.rawRows.length.toLocaleString();
-      buildPeriodSel();
-      update();
-      buildJobTable();
-    })
-    .catch(err => {
-      showLoading(false);
-      showError('โหลดข้อมูลไม่ได้: ' + err.message);
-    });
+function processCSV(csv, fromCache){
+  DB=buildDB(csv);
+  const now=new Date();
+  document.getElementById('lastUpdate').textContent=
+    fromCache ? '(จาก cache) ' + new Date(parseInt(localStorage.getItem(LS_TS_KEY)||0))
+                                  .toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'})
+              : now.toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('totalCount').textContent=DB.rawRows.length.toLocaleString();
+  buildPeriodSel();
+  update();
+  buildJobTable();
+}
+
+async function fetchFresh(){
+  showUpdateBadge(true);
+  try{
+    const r=await fetch(WEBAPP_URL);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const text=await r.text();
+    if(!text||text.startsWith('ERROR:')) throw new Error(text||'ไม่มีข้อมูล');
+
+    // บันทึก cache
+    try{
+      localStorage.setItem(LS_KEY, text);
+      localStorage.setItem(LS_TS_KEY, String(Date.now()));
+    }catch(e){}
+
+    // อัปเดต UI (ถ้า DB มีอยู่แล้ว = background refresh)
+    processCSV(text, false);
+    document.getElementById('errorMsg').style.display='none';
+  }catch(err){
+    // ถ้ายังไม่มี DB เลย (ไม่มี cache) → แสดง error
+    if(!DB) showError('โหลดข้อมูลไม่ได้: '+err.message);
+  }finally{
+    showUpdateBadge(false);
+  }
+}
+
+function loadData(){
+  document.getElementById('errorMsg').style.display='none';
+  let hasCachedData=false;
+
+  // 1. ลองอ่าน localStorage ก่อน → แสดงทันที
+  try{
+    const cached=localStorage.getItem(LS_KEY);
+    const cachedTs=parseInt(localStorage.getItem(LS_TS_KEY)||'0');
+    if(cached){
+      processCSV(cached, true);
+      hasCachedData=true;
+
+      // ถ้า cache หมดอายุ → fetch ใหม่ใน background
+      const isStale=Date.now()-cachedTs>LS_TTL;
+      if(isStale) fetchFresh();
+    }
+  }catch(e){}
+
+  // 2. ถ้าไม่มี cache → fetch ปกติ (แสดง skeleton ระหว่างรอ)
+  if(!hasCachedData) fetchFresh();
+}
+
+// รีโหลดแบบบังคับ (ล้าง cache)
+function forceReload(){
+  try{localStorage.removeItem(LS_KEY);localStorage.removeItem(LS_TS_KEY);}catch(e){}
+  DB=null;
+  loadData();
 }
 
 // ============================================================
 // EVENT LISTENERS
 // ============================================================
-document.querySelectorAll('.seg-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+document.querySelectorAll('.seg-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.seg-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    state.periodType = btn.dataset.v;
-    state.period = 'ทั้งหมด';
+    state.periodType=btn.dataset.v;
+    state.period='ทั้งหมด';
     buildPeriodSel();
     update();
   });
 });
 
-document.getElementById('periodSel').addEventListener('change', e => {
-  state.period = e.target.value;
-  jobCurrentPage = 1;
+document.getElementById('periodSel').addEventListener('change',e=>{
+  state.period=e.target.value;
+  jobCurrentPage=1;
   update();
 });
 
-document.querySelectorAll('.task-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+document.querySelectorAll('.task-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
     btn.classList.toggle('active');
-    const t = btn.dataset.t;
-    if (t==='design') state.showDesign = btn.classList.contains('active');
-    else if (t==='photo')  state.showPhoto  = btn.classList.contains('active');
-    else if (t==='video')  state.showVideo  = btn.classList.contains('active');
-    else if (t==='soat')   state.showSoat   = btn.classList.contains('active');
-    else if (t==='pr')     state.showPr     = btn.classList.contains('active');
-    jobCurrentPage = 1;
+    const t=btn.dataset.t;
+    if(t==='design') state.showDesign=btn.classList.contains('active');
+    else if(t==='photo')  state.showPhoto=btn.classList.contains('active');
+    else if(t==='video')  state.showVideo=btn.classList.contains('active');
+    else if(t==='soat')   state.showSoat=btn.classList.contains('active');
+    else if(t==='pr')     state.showPr=btn.classList.contains('active');
+    jobCurrentPage=1;
     update();
   });
 });
 
-document.getElementById('reloadBtn').addEventListener('click', () => loadData());
+// ปุ่มรีโหลด → บังคับดึงข้อมูลใหม่ (ล้าง cache)
+document.getElementById('reloadBtn').addEventListener('click',forceReload);
 
-// job filter listeners — ใช้ event delegation แทน เพื่อให้ทำงานได้แม้ element ซ่อนอยู่
-document.addEventListener('change', e => {
-  if (['jobTypeFilter','jobEmpFilter','jobOwnerFilter'].includes(e.target.id)) {
-    jobCurrentPage = 1; renderJobTable();
+document.addEventListener('change',e=>{
+  if(['jobTypeFilter','jobEmpFilter','jobOwnerFilter'].includes(e.target.id)){
+    jobCurrentPage=1;renderJobTable();
   }
 });
-document.addEventListener('input', e => {
-  if (e.target.id === 'jobSearch') { jobCurrentPage = 1; renderJobTable(); }
+document.addEventListener('input',e=>{
+  if(e.target.id==='jobSearch'){jobCurrentPage=1;renderJobTable();}
 });
 
 // Start
