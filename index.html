@@ -364,7 +364,7 @@ function buildDB(csv) {
   // skip header row
   const rawRows = [];
   const empDesignSet = new Set(), empPrSet = new Set(), empAllSet = new Set();
-  // empAllSet จะถูก populate จาก task columns เท่านั้น (ไม่รวม 'ไม่ระบุ')
+  const empDesignOnlySet = new Set(); // col 10-16 สำหรับ dropdown filter
   const yearSet = new Set(), monthSet = new Set();
 
   // aggregates: emp → year/month → counts
@@ -478,11 +478,16 @@ function buildDB(csv) {
     Object.entries(taskEmps).forEach(([field, empList]) => {
       empList.forEach(e => {
         empAllSet.add(e);
-        if (field !== 'pr') empDesignSet.add(e); else empPrSet.add(e);
+        if (field !== 'pr') {
+          empDesignSet.add(e);
+          empDesignOnlySet.add(e); // col 10-16 เท่านั้น
+        } else {
+          empPrSet.add(e);
+        }
         addEmp(e, field);
       });
     });
-    // เพิ่ม emps ที่ไม่ได้อยู่ใน taskEmps เข้า empAllSet ด้วย
+    // emps จาก col 8 ใส่ใน empAllSet แต่ไม่ใส่ใน empDesignOnlySet
     emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>empAllSet.add(e));
 
     // monthly totals
@@ -503,7 +508,8 @@ function buildDB(csv) {
   );
   const employees = [...empAllSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
 
-  return { years, months: sortedMonths, employees, emp_year, emp_month, monthly_totals, rawRows };
+  const empDesignOnly = [...empDesignOnlySet].filter(e=>e&&e!=='ไม่ระบุ').sort();
+  return { years, months: sortedMonths, employees, empDesignOnly, emp_year, emp_month, monthly_totals, rawRows };
 }
 
 // ============================================================
@@ -674,7 +680,7 @@ function buildJobTable() {
   const empSel = document.getElementById('jobEmpFilter');
   const prevEmp = empSel.value;
   empSel.innerHTML = '<option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>';
-  DB.employees.forEach(e => {
+  (DB.empDesignOnly || DB.employees).forEach(e => {
     const o = document.createElement('option');
     o.value = e; o.textContent = e; empSel.appendChild(o);
   });
@@ -717,8 +723,10 @@ function renderJobTable() {
       if (!checkFn || !checkFn(r)) return false;
     }
     if (empFilter) {
-      const allEmpsInRow = [...r.emps, ...Object.values(r.taskEmps||{}).flat()];
-      if (!allEmpsInRow.some(e=>e===empFilter)) return false;
+      // กรองจาก col 10-16 เท่านั้น (design/photo/video/soat)
+      const designEmpsInRow = ['design','photo','video','soat']
+        .flatMap(k => (r.taskEmps?.[k]) || []);
+      if (!designEmpsInRow.some(e=>e===empFilter)) return false;
     }
     if (ownerFilter && r.owner !== ownerFilter)       return false;
     if (search && !r.jobDetail.toLowerCase().includes(search) &&
