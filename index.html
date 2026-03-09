@@ -578,6 +578,7 @@ function update() {
   if (document.getElementById('jobTbody')) renderJobTable();
 
   const empData = DB.employees.map(e => ({ name:e, ...getEmpData(e) }));
+  const sorted  = empData.sort((a,b) => (b.designTotal+b.pr) - (a.designTotal+a.pr));
 
   // KPI — นับจาก rawRows โดยตรง (1 งาน = 1 ครั้ง ไม่นับซ้ำต่อ emp)
   let tDesign=0, tPhoto=0, tVideo=0, tSoat=0, tPr=0;
