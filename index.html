@@ -329,7 +329,7 @@ const COL = {
 };
 
 let DB = null;
-let state = {periodType:'year',period:'ทั้งหมด',showDesign:true,showPhoto:true,showVideo:true,showSoat:true,showPr:true};
+let state = {periodType:'year',period:'ทั้งหมด',showDesign:true,showPhoto:true,showVideo:true,showSoat:true,showPr:true,rankEmpFilter:''};
 let jobCurrentPage = 1;
 let timelineChartInst=null, designChartInst=null, prChartInst=null;
 
@@ -610,18 +610,13 @@ function update(){
       </div>
       <div style="font-size:11px;font-weight:700;color:#4a5568;width:28px;text-align:right;flex-shrink:0">${total}</div>`;
     div.addEventListener('click',()=>{
-      const empSel=document.getElementById('jobEmpFilter');
-      if(empSel.value===e.name){
-        empSel.value=''; div.style.background='';
+      if(state.rankEmpFilter===e.name){
+        state.rankEmpFilter='';
+        div.style.background='';
       } else {
+        state.rankEmpFilter=e.name;
         rankDiv.querySelectorAll('.rb-row').forEach(r=>r.style.background='');
-        // เพิ่ม option ชั่วคราวถ้าชื่อยังไม่มีใน dropdown
-        if(![...empSel.options].some(o=>o.value===e.name)){
-          const tmp=document.createElement('option');
-          tmp.value=e.name; tmp.textContent=e.name;
-          empSel.appendChild(tmp);
-        }
-        empSel.value=e.name; div.style.background='rgba(124,158,245,.1)';
+        div.style.background='rgba(124,158,245,.1)';
       }
       jobCurrentPage=1; renderJobTable();
       document.querySelector('.sl:last-of-type')?.scrollIntoView({behavior:'smooth',block:'start'});
@@ -781,9 +776,15 @@ function renderJobTable(){
   const rows=DB.rawRows.filter(r=>{
     if(!rowInPeriod(r)) return false;
     if(typeFilter&&!r.tags.includes(typeFilter)) return false;
+    // filter จาก dropdown
     if(empFilter){
       const allEmps=[...(r.designEmps||[]),...(r.mainEmps||[]),...Object.values(r.prMediaEmps||{}),...(r.emps||[])];
       if(!allEmps.includes(empFilter)) return false;
+    }
+    // filter จาก rank bar click
+    if(state.rankEmpFilter){
+      const allEmps=[...(r.designEmps||[]),...(r.mainEmps||[]),...Object.values(r.prMediaEmps||{}),...(r.emps||[])];
+      if(!allEmps.includes(state.rankEmpFilter)) return false;
     }
     if(ownerFilter&&r.owner!==ownerFilter) return false;
     if(search&&!r.jobDetail.toLowerCase().includes(search)&&
@@ -913,6 +914,7 @@ document.querySelectorAll('.seg-btn').forEach(btn=>{
 
 document.getElementById('periodSel').addEventListener('change',e=>{
   state.period=e.target.value;
+  state.rankEmpFilter='';
   jobCurrentPage=1;
   update();
 });
