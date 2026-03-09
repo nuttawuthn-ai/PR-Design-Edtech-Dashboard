@@ -781,9 +781,14 @@ document.querySelectorAll('.task-btn').forEach(btn => {
 
 document.getElementById('reloadBtn').addEventListener('click', () => loadData());
 
-['jobTypeFilter','jobEmpFilter','jobOwnerFilter','jobSearch'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener(id==='jobSearch'?'input':'change', () => { jobCurrentPage=1; renderJobTable(); });
+// job filter listeners — ใช้ event delegation แทน เพื่อให้ทำงานได้แม้ element ซ่อนอยู่
+document.addEventListener('change', e => {
+  if (['jobTypeFilter','jobEmpFilter','jobOwnerFilter'].includes(e.target.id)) {
+    jobCurrentPage = 1; renderJobTable();
+  }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'jobSearch') { jobCurrentPage = 1; renderJobTable(); }
 });
 
 // Start
