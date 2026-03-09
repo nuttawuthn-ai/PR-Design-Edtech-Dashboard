@@ -618,15 +618,8 @@ function update(){
         rankDiv.querySelectorAll('.rb-row').forEach(r=>r.style.background='');
         div.style.background='rgba(124,158,245,.1)';
       }
-      console.log('[RANK CLICK] rankEmpFilter=',state.rankEmpFilter);
-      // debug: ตรวจดู allEmps ของ 3 rows แรก
-      DB.rawRows.slice(0,3).forEach((r,i)=>{
-        const allEmps=[...(r.designEmps||[]),...(r.mainEmps||[]),...Object.values(r.prMediaEmps||{}),...(r.emps||[])];
-        console.log('[ROW'+i+'] allEmps=',allEmps.join('|'));
-      });
       jobCurrentPage=1; renderJobTable();
       const rows=document.getElementById('jobTbody').querySelectorAll('tr');
-      console.log('[RESULT] visible rows=',rows.length);
       document.querySelector('.sl:last-of-type')?.scrollIntoView({behavior:'smooth',block:'start'});
     });
     div.addEventListener('mouseenter',()=>{ if(document.getElementById('jobEmpFilter').value!==e.name) div.style.background='rgba(0,0,0,.03)'; });
@@ -787,12 +780,23 @@ function renderJobTable(){
     // filter จาก dropdown
     if(empFilter){
       const allEmps=[...(r.designEmps||[]),...(r.mainEmps||[]),...Object.values(r.prMediaEmps||{}),...(r.emps||[])];
-      if(!allEmps.includes(empFilter)) return false;
+      const matched=allEmps.some(n=>
+        n===empFilter ||
+        n.startsWith(empFilter+' ') ||
+        empFilter.startsWith(n.split(' ')[0])&&n.startsWith(empFilter.split(' ')[0])
+      );
+      if(!matched) return false;
     }
-    // filter จาก rank bar click
+    // filter จาก rank bar click — match แบบ partial (ชื่อย่ออาจไม่มีนามสกุล)
     if(state.rankEmpFilter){
       const allEmps=[...(r.designEmps||[]),...(r.mainEmps||[]),...Object.values(r.prMediaEmps||{}),...(r.emps||[])];
-      if(!allEmps.includes(state.rankEmpFilter)) return false;
+      const matched=allEmps.some(n=>
+        n===state.rankEmpFilter ||
+        n.startsWith(state.rankEmpFilter+' ') ||
+        n.startsWith(state.rankEmpFilter+' ') ||
+        state.rankEmpFilter.startsWith(n.split(' ')[0])&&n.startsWith(state.rankEmpFilter.split(' ')[0])
+      );
+      if(!matched) return false;
     }
     if(ownerFilter&&r.owner!==ownerFilter) return false;
     if(search&&!r.jobDetail.toLowerCase().includes(search)&&
