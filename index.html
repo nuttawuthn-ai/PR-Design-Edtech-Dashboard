@@ -307,13 +307,32 @@ const LS_TTL    = 60 * 60 * 1000; // 1 ชั่วโมง (ms)
 
 // column indices (0-based)
 const COL = {
-  timestamp:0,jobId:1,jobType:2,content:3,
-  assignDate:4,receiveDate:5,owner:6,dept:7,
-  empDesign:8,design:9,designVid:10,photo:11,video:12,
-  soat1:13,soat2:14,soat3:15,
-  pr1:16,pr2:17,pr3:18,pr4:19,pr5:20,pr6:21,pr7:22,
-  pr8:23,pr9:24,pr10:25,pr11:26,pr12:27,pr13:28,pr14:29,
-  empExhibit:30
+  timestamp:0, jobId:1, jobType:2, content:3,
+  assignDate:4, receiveDate:5, owner:6, dept:7,
+  empDesign:8,
+  jobDetail:9,          // รายละเอียดงานด้านออกแบบฯ
+  design:10,            // ออกแบบสื่อ (ภาพนิ่ง)
+  designVid:11,         // ออกแบบสื่อ (วิดีโอ/คลิปสั้น)
+  photo:12,             // ถ่ายภาพ (ภาพนิ่ง/วิดีโอ)
+  video:13,             // ตัดต่อวิดีโอ
+  soat1:14,             // ติดตั้งและควบคุมอุปกรณ์โสตฯ
+  soat2:15,             // ผลิตรายการ/สื่อโสตฯ
+  soat3:16,             // อื่นๆ โสตฯ
+  pr1:17,               // เขียนข่าวภาษาไทย
+  pr2:18,               // เขียนข่าวภาษาอังกฤษ
+  pr3:19,               // พิสูจน์อักษร
+  pr4:20,               // ต้อนรับผู้เยี่ยมชมชาวต่างชาติ
+  pr5:21,               // ต้อนรับผู้เยี่ยมชมชาวไทย
+  pr6:22,               // พิธีกร
+  pr7:23,               // ประชาสัมพันธ์ผ่าน FB
+  pr8:24,               // ประชาสัมพันธ์ผ่าน Line OA
+  pr9:25,               // ประชาสัมพันธ์ผ่าน TikTok
+  pr10:26,              // ประชาสัมพันธ์ผ่าน IG
+  pr11:27,              // ประชาสัมพันธ์ผ่าน Web/TV (LED)
+  pr12:28,              // ประชาสัมพันธ์ผ่าน Line Lib-Team
+  pr13:29,              // ประสานงาน อำนวยความสะดวก
+  pr14:30,              // อื่นๆ
+  empExhibit:31         // ผู้รับมอบหมายนิทรรศการ
 };
 
 let DB = null;
@@ -420,17 +439,17 @@ function buildDB(csv){
     const emps=empRaw?empRaw.split(',').map(e=>e.trim()).filter(e=>e.length>1&&e.length<=30):[];
     if(!emps.length) emps.push('ไม่ระบุ');
 
-    // ดึงผู้รับผิดชอบด้านออกแบบ/โสตฯ จาก col 10-15
+    // ดึงผู้รับผิดชอบด้านออกแบบ/โสตฯ จาก col 11-16
     const designEmpCols=[COL.designVid,COL.photo,COL.video,COL.soat1,COL.soat2,COL.soat3];
     const designEmpsRaw=designEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
     const designEmps=[...new Set(designEmpsRaw)];
 
-    // ผู้รับผิดชอบหลัก (เฉพาะงาน design) จาก col 10=designVid, 11=photo, 12=video
+    // ผู้รับผิดชอบหลัก (เฉพาะงาน design) จาก col 11=designVid, 12=photo, 13=video
     const mainEmpCols=[COL.designVid,COL.photo,COL.video];
     const mainEmpsRaw=mainEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
     const mainEmps=[...new Set(mainEmpsRaw)];
 
-    // ผู้รับผิดชอบ PR แยกต่อ channel (col 22-27)
+    // ผู้รับผิดชอบ PR แยกต่อ channel (col 23-28)
     const prMediaCols={
       fb:COL.pr7, lineoa:COL.pr8, tiktok:COL.pr9,
       ig:COL.pr10, webtv:COL.pr11, lineteam:COL.pr12
@@ -461,20 +480,20 @@ function buildDB(csv){
       emp_month[emp][ym][field]++;
     };
 
-    // ── นับแยกตาม column จริง (col 10=designVid, 11=photo, 12=video) ──
-    // design: ดึงชื่อจาก col 10 (ออกแบบสื่อ วิดีโอ/คลิปสั้น)
+    // ── นับแยกตาม column จริง ──
+    // design: col 11 = ออกแบบสื่อ (วิดีโอ/คลิปสั้น)
     const empDesignVid=clean(row[COL.designVid]);
     if(empDesignVid&&empDesignVid.length<=40){
       empAllSet.add(empDesignVid);
       addEmp(empDesignVid,'design');
     }
-    // photo: ดึงชื่อจาก col 11 (ถ่ายภาพ)
+    // photo: col 12 = ถ่ายภาพ
     const empPhoto=clean(row[COL.photo]);
     if(empPhoto&&empPhoto.length<=40){
       empAllSet.add(empPhoto);
       addEmp(empPhoto,'photo');
     }
-    // video: ดึงชื่อจาก col 12 (ตัดต่อวิดีโอ)
+    // video: col 13 = ตัดต่อวิดีโอ
     const empVideo=clean(row[COL.video]);
     if(empVideo&&empVideo.length<=40){
       empAllSet.add(empVideo);
