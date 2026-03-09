@@ -470,6 +470,9 @@ function buildDB(csv) {
   );
   const employees = [...empAllSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
 
+  console.log('=== DEBUG ===');
+  console.log('employees:', employees);
+  console.log('rawRows sample emps:', rawRows.slice(0,3).map(r=>({emps:r.emps, tags:r.tags, jobDetail:r.jobDetail})));
   return { years, months: sortedMonths, employees, emp_year, emp_month, monthly_totals, rawRows };
 }
 
