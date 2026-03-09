@@ -439,13 +439,13 @@ function buildDB(csv){
     const emps=empRaw?empRaw.split(',').map(e=>e.trim()).filter(e=>e.length>1&&e.length<=30):[];
     if(!emps.length) emps.push('ไม่ระบุ');
 
-    // ดึงผู้รับผิดชอบด้านออกแบบ/โสตฯ จาก col 11-16
-    const designEmpCols=[COL.designVid,COL.photo,COL.video,COL.soat1,COL.soat2,COL.soat3];
+    // ดึงผู้รับผิดชอบด้านออกแบบ/โสตฯ จาก col 10-16
+    const designEmpCols=[COL.design,COL.designVid,COL.photo,COL.video,COL.soat1,COL.soat2,COL.soat3];
     const designEmpsRaw=designEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
     const designEmps=[...new Set(designEmpsRaw)];
 
-    // ผู้รับผิดชอบหลัก (เฉพาะงาน design) จาก col 11=designVid, 12=photo, 13=video
-    const mainEmpCols=[COL.designVid,COL.photo,COL.video];
+    // ผู้รับผิดชอบหลัก (เฉพาะงาน design) จาก col 10=design(ภาพนิ่ง), 11=designVid, 12=photo, 13=video
+    const mainEmpCols=[COL.design,COL.designVid,COL.photo,COL.video];
     const mainEmpsRaw=mainEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
     const mainEmps=[...new Set(mainEmpsRaw)];
 
@@ -481,6 +481,12 @@ function buildDB(csv){
     };
 
     // ── นับแยกตาม column จริง ──
+    // design: col 10 = ออกแบบสื่อ (ภาพนิ่ง)
+    const empDesign=clean(row[COL.design]);
+    if(empDesign&&empDesign.length<=40){
+      empAllSet.add(empDesign);
+      addEmp(empDesign,'design');
+    }
     // design: col 11 = ออกแบบสื่อ (วิดีโอ/คลิปสั้น)
     const empDesignVid=clean(row[COL.designVid]);
     if(empDesignVid&&empDesignVid.length<=40){
@@ -836,8 +842,16 @@ function renderJobTable(){
     if(!rowInPeriod(r)) return false;
     // 2. กรองตามประเภทงาน
     if(typeFilter&&!r.tags.includes(typeFilter)) return false;
-    // 3. กรองตามผู้รับผิดชอบ
-    if(empFilter&&!(r.designEmps||[]).includes(empFilter)) return false;
+    // 3. กรองตามผู้รับผิดชอบ — เช็คทั้ง designEmps, mainEmps, prMediaEmps และ emps
+    if(empFilter){
+      const allEmps=[
+        ...(r.designEmps||[]),
+        ...(r.mainEmps||[]),
+        ...Object.values(r.prMediaEmps||{}),
+        ...(r.emps||[])
+      ];
+      if(!allEmps.includes(empFilter)) return false;
+    }
     // 4. กรองตามเจ้าของงาน
     if(ownerFilter&&r.owner!==ownerFilter) return false;
     // 5. ค้นหาข้อความ
