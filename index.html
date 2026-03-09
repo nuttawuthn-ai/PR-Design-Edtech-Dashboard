@@ -277,29 +277,28 @@ const COL = {
   timestamp: 0, jobId: 1, jobType: 2, content: 3,
   assignDate: 4, receiveDate: 5, owner: 6, dept: 7,
   empDesign: 8,   // ผู้รับมอบหมาย (ออกแบบ/ประชาสัมพันธ์)
-  jobDetail: 9,
-  design: 10,     // ออกแบบสื่อ (ภาพนิ่ง)
-  designVid: 11,  // ออกแบบสื่อ (วิดีโอ)
-  photo: 12,      // ถ่ายภาพ
-  video: 13,      // ตัดต่อวิดีโอ
-  soat1: 14,      // ติดตั้งโสตฯ
-  soat2: 15,      // ผลิตรายการ
-  soat3: 16,      // อื่นๆ โสตฯ
-  pr1: 17,        // เขียนข่าวไทย
-  pr2: 18,        // เขียนข่าวอังกฤษ
-  pr3: 19,        // พิสูจน์อักษร
-  pr4: 20,        // ต้อนรับต่างชาติ
-  pr5: 21,        // ต้อนรับไทย
-  pr6: 22,        // พิธีกร
-  pr7: 23,        // FB
-  pr8: 24,        // Line OA
-  pr9: 25,        // TikTok
-  pr10: 26,       // IG
-  pr11: 27,       // Web/TV
-  pr12: 28,       // Line Lib-Team
-  pr13: 29,       // ประสานงาน
-  pr14: 30,       // อื่นๆ ประชาสัมพันธ์
-  empExhibit: 31  // ผู้รับมอบหมายนิทรรศการ
+  design: 9,      // ออกแบบสื่อ (ภาพนิ่ง)  ← col 9 จริงๆ
+  designVid: 10,  // ออกแบบสื่อ (วิดีโอ)
+  photo: 11,      // ถ่ายภาพ
+  video: 12,      // ตัดต่อวิดีโอ
+  soat1: 13,      // ติดตั้งโสตฯ
+  soat2: 14,      // ผลิตรายการ
+  soat3: 15,      // อื่นๆ โสตฯ
+  pr1: 16,        // เขียนข่าวไทย
+  pr2: 17,        // เขียนข่าวอังกฤษ
+  pr3: 18,        // พิสูจน์อักษร
+  pr4: 19,        // ต้อนรับต่างชาติ
+  pr5: 20,        // ต้อนรับไทย
+  pr6: 21,        // พิธีกร
+  pr7: 22,        // FB
+  pr8: 23,        // Line OA
+  pr9: 24,        // TikTok
+  pr10: 25,       // IG
+  pr11: 26,       // Web/TV
+  pr12: 27,       // Line Lib-Team
+  pr13: 28,       // ประสานงาน
+  pr14: 29,       // อื่นๆ ประชาสัมพันธ์
+  empExhibit: 30  // ผู้รับมอบหมายนิทรรศการ
 };
 
 let DB = null;
@@ -398,15 +397,14 @@ function buildDB(csv) {
     }
     if (!year || !ym) continue;
 
-        // col 10-16 = ชื่อผู้ทำ design/photo/video/soat tasks
-    // col 17-30 = ชื่อผู้ทำ PR tasks
-    // hasVal = มีชื่อคนอยู่ใน cell
-    const designEmps  = [clean(row[10]), clean(row[11])].filter(Boolean);
-    const photoEmps   = [clean(row[12])].filter(Boolean);
-    const videoEmps   = [clean(row[13])].filter(Boolean);
-    const soatEmps    = [clean(row[14]), clean(row[15]), clean(row[16])].filter(Boolean);
-    const prCols      = [17,18,19,20,21,22,23,24,25,26,27,28,29,30];
-    const prEmps      = prCols.map(c=>clean(row[c])).filter(Boolean);
+        // ชื่อคนที่รับผิดชอบแต่ละ task (เก็บชื่อใน cell นั้นๆ)
+    const designEmps = [clean(row[COL.design]), clean(row[COL.designVid])].filter(Boolean);
+    const photoEmps  = [clean(row[COL.photo])].filter(Boolean);
+    const videoEmps  = [clean(row[COL.video])].filter(Boolean);
+    const soatEmps   = [clean(row[COL.soat1]), clean(row[COL.soat2]), clean(row[COL.soat3])].filter(Boolean);
+    const prCols     = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
+                        COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
+    const prEmps     = prCols.map(c=>clean(row[c])).filter(Boolean);
 
     const isDesign = designEmps.length > 0;
     const isPhoto  = photoEmps.length > 0;
@@ -425,8 +423,10 @@ function buildDB(csv) {
     // รวม emp ทั้งหมดของงานนี้ (unique)
     const splitEmps = (str) => str.split(/[,\n\r]/).map(e=>e.trim()).filter(e=>e.length>0);
     const allEmpsRaw = clean(row[COL.empDesign]);
+    const exhibitRaw = clean(row[COL.empExhibit]);
     const emps = [];
     if (allEmpsRaw) splitEmps(allEmpsRaw).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
+    if (exhibitRaw) splitEmps(exhibitRaw).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
     // fallback: รวมจาก task columns
     [...designEmps,...photoEmps,...videoEmps,...soatEmps,...prEmps].forEach(e=>{
       if(e && !emps.includes(e)) emps.push(e);
