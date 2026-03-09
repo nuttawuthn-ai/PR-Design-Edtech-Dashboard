@@ -397,14 +397,21 @@ function buildDB(csv) {
     }
     if (!year || !ym) continue;
 
-    // ตรวจว่าแต่ละ task มีค่าไหม
-    const isDesign  = hasVal(row[COL.design]) || hasVal(row[COL.designVid]);
-    const isPhoto   = hasVal(row[COL.photo]);
-    const isVideo   = hasVal(row[COL.video]);
-    const isSoat    = hasVal(row[COL.soat1]) || hasVal(row[COL.soat2]) || hasVal(row[COL.soat3]);
-    const isPr      = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
-                       COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14]
-                      .some(c => hasVal(row[c]));
+        // col 10-16 = ชื่อผู้ทำ design/photo/video/soat tasks
+    // col 17-30 = ชื่อผู้ทำ PR tasks
+    // hasVal = มีชื่อคนอยู่ใน cell
+    const designEmps  = [clean(row[10]), clean(row[11])].filter(Boolean);
+    const photoEmps   = [clean(row[12])].filter(Boolean);
+    const videoEmps   = [clean(row[13])].filter(Boolean);
+    const soatEmps    = [clean(row[14]), clean(row[15]), clean(row[16])].filter(Boolean);
+    const prCols      = [17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+    const prEmps      = prCols.map(c=>clean(row[c])).filter(Boolean);
+
+    const isDesign = designEmps.length > 0;
+    const isPhoto  = photoEmps.length > 0;
+    const isVideo  = videoEmps.length > 0;
+    const isSoat   = soatEmps.length > 0;
+    const isPr     = prEmps.length > 0;
 
     // หา tags
     const tags = [];
@@ -414,42 +421,36 @@ function buildDB(csv) {
     if (isSoat)   tags.push('soat');
     if (isPr)     tags.push('pr');
 
-    // หา employee list
+    // รวม emp ทั้งหมดของงานนี้ (unique)
     const splitEmps = (str) => str.split(/[,\n\r]/).map(e=>e.trim()).filter(e=>e.length>0);
+    const allEmpsRaw = clean(row[COL.empDesign]);
     const emps = [];
-    if (empDesign)  splitEmps(empDesign).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
-    if (empExhibit) splitEmps(empExhibit).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
+    if (allEmpsRaw) splitEmps(allEmpsRaw).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
+    // fallback: รวมจาก task columns
+    [...designEmps,...photoEmps,...videoEmps,...soatEmps,...prEmps].forEach(e=>{
+      if(e && !emps.includes(e)) emps.push(e);
+    });
     if (!emps.length) emps.push('ไม่ระบุ');
-
-    emps.forEach(emp => empAllSet.add(emp));
-    if (isDesign||isPhoto||isVideo||isSoat) emps.forEach(e=>empDesignSet.add(e));
-    if (isPr) emps.forEach(e=>empPrSet.add(e));
 
     yearSet.add(year); monthSet.add(ym);
 
     // store raw
     rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, emps, year, ym });
 
-    // aggregate per employee
-    emps.forEach(emp => {
+    // aggregate per employee — นับเฉพาะ task ที่ตัวเองทำ
+    const addEmp = (emp, field) => {
       if (!emp_year[emp]) emp_year[emp] = {};
-      if (!emp_year[emp][year]) emp_year[emp][year] = { design:0, photo:0, video:0, soat:0, pr:0 };
-      const ey = emp_year[emp][year];
-      if (isDesign) ey.design++;
-      if (isPhoto)  ey.photo++;
-      if (isVideo)  ey.video++;
-      if (isSoat)   ey.soat++;
-      if (isPr)     ey.pr++;
-
+      if (!emp_year[emp][year]) emp_year[emp][year] = {design:0,photo:0,video:0,soat:0,pr:0};
+      emp_year[emp][year][field]++;
       if (!emp_month[emp]) emp_month[emp] = {};
-      if (!emp_month[emp][ym]) emp_month[emp][ym] = { design:0, photo:0, video:0, soat:0, pr:0 };
-      const em = emp_month[emp][ym];
-      if (isDesign) em.design++;
-      if (isPhoto)  em.photo++;
-      if (isVideo)  em.video++;
-      if (isSoat)   em.soat++;
-      if (isPr)     em.pr++;
-    });
+      if (!emp_month[emp][ym]) emp_month[emp][ym] = {design:0,photo:0,video:0,soat:0,pr:0};
+      emp_month[emp][ym][field]++;
+    };
+    designEmps.forEach(e=>{ empAllSet.add(e); empDesignSet.add(e); addEmp(e,'design'); });
+    photoEmps.forEach(e=>{  empAllSet.add(e); empDesignSet.add(e); addEmp(e,'photo');  });
+    videoEmps.forEach(e=>{  empAllSet.add(e); empDesignSet.add(e); addEmp(e,'video');  });
+    soatEmps.forEach(e=>{   empAllSet.add(e); empDesignSet.add(e); addEmp(e,'soat');   });
+    prEmps.forEach(e=>{     empAllSet.add(e); empPrSet.add(e);     addEmp(e,'pr');     });
 
     // monthly totals
     if (!monthly_totals[ym]) monthly_totals[ym] = { design:0, photo:0, video:0, soat:0, pr:0 };
