@@ -399,21 +399,18 @@ function buildDB(csv) {
     }
     if (!year || !ym) continue;
 
-        // split ชื่อคนจาก cell (อาจมีหลายคนคั่น comma)
-    const sp = (v) => clean(v).split(/[,،]/).map(e=>e.trim()).filter(e=>e.length>1);
-    const designEmps = [...sp(row[COL.design]), ...sp(row[COL.designVid])].filter((v,i,a)=>a.indexOf(v)===i);
-    const photoEmps  = sp(row[COL.photo]);
-    const videoEmps  = sp(row[COL.video]);
-    const soatEmps   = [...sp(row[COL.soat1]),...sp(row[COL.soat2]),...sp(row[COL.soat3])].filter((v,i,a)=>a.indexOf(v)===i);
-    const prCols     = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
-                        COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
-    const prEmps     = [...new Set(prCols.flatMap(c=>sp(row[c])))];
+    // ฟังก์ชัน: cell มีค่า = task นั้นถูกมอบหมาย (ชื่อสั้น ≤ 40 ตัว)
+    const taskFilled = (v) => { const s = clean(v); return s.length > 0 && s.length <= 40; };
+    const isDesign = taskFilled(row[COL.design]) || taskFilled(row[COL.designVid]);
+    const isPhoto  = taskFilled(row[COL.photo]);
+    const isVideo  = taskFilled(row[COL.video]);
+    const isSoat   = taskFilled(row[COL.soat1]) || taskFilled(row[COL.soat2]) || taskFilled(row[COL.soat3]);
+    const prCols   = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
+                      COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
+    const isPr     = prCols.some(c => taskFilled(row[c]));
 
-    const isDesign = designEmps.length > 0;
-    const isPhoto  = photoEmps.length > 0;
-    const isVideo  = videoEmps.length > 0;
-    const isSoat   = soatEmps.length > 0;
-    const isPr     = prEmps.length > 0;
+    // designEmps/photoEmps ฯลฯ ไม่ได้ใช้แยกต่อ — ใช้ col 8 แทน
+    const designEmps=[], photoEmps=[], videoEmps=[], soatEmps=[], prEmps=[];
 
     // หา tags
     const tags = [];
@@ -423,12 +420,11 @@ function buildDB(csv) {
     if (isSoat)   tags.push('soat');
     if (isPr)     tags.push('pr');
 
-    // รวม emp ทั้งหมดของงานนี้ (unique) — ใช้ task columns เป็นหลัก
-    const emps = [...new Set([...designEmps,...photoEmps,...videoEmps,...soatEmps,...prEmps])];
-    if (!emps.length) {
-      // fallback ใช้ col 8
-      sp(row[COL.empDesign]).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
-    }
+    // emps มาจาก col 8 (ผู้รับมอบหมาย) split comma เท่านั้น
+    const empRaw = clean(row[COL.empDesign]);
+    const emps = empRaw
+      ? empRaw.split(',').map(e=>e.trim()).filter(e=>e.length>1 && e.length<=30)
+      : [];
     if (!emps.length) emps.push('ไม่ระบุ');
 
     yearSet.add(year); monthSet.add(ym);
@@ -445,12 +441,17 @@ function buildDB(csv) {
       if (!emp_month[emp][ym]) emp_month[emp][ym] = {design:0,photo:0,video:0,soat:0,pr:0};
       emp_month[emp][ym][field]++;
     };
-    const addE = (e,set,field) => { if(e&&e!=='ไม่ระบุ'){empAllSet.add(e);set.add(e);addEmp(e,field);} };
-    designEmps.forEach(e=>addE(e,empDesignSet,'design'));
-    photoEmps.forEach(e=> addE(e,empDesignSet,'photo'));
-    videoEmps.forEach(e=> addE(e,empDesignSet,'video'));
-    soatEmps.forEach(e=>  addE(e,empDesignSet,'soat'));
-    prEmps.forEach(e=>    addE(e,empPrSet,    'pr'));
+    // นับงานต่อ emp โดยดูจาก tags ของงานนั้น
+    emps.filter(e=>e!=='ไม่ระบุ').forEach(e => {
+      empAllSet.add(e);
+      if (isDesign||isPhoto||isVideo||isSoat) empDesignSet.add(e);
+      if (isPr) empPrSet.add(e);
+      if (isDesign) addEmp(e,'design');
+      if (isPhoto)  addEmp(e,'photo');
+      if (isVideo)  addEmp(e,'video');
+      if (isSoat)   addEmp(e,'soat');
+      if (isPr)     addEmp(e,'pr');
+    });
 
     // monthly totals
     if (!monthly_totals[ym]) monthly_totals[ym] = { design:0, photo:0, video:0, soat:0, pr:0 };
@@ -470,9 +471,6 @@ function buildDB(csv) {
   );
   const employees = [...empAllSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
 
-  console.log('=== DEBUG ===');
-  console.log('employees:', employees);
-  console.log('rawRows sample emps:', rawRows.slice(0,3).map(r=>({emps:r.emps, tags:r.tags, jobDetail:r.jobDetail})));
   return { years, months: sortedMonths, employees, emp_year, emp_month, monthly_totals, rawRows };
 }
 
