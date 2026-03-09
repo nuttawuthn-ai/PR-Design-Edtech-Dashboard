@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Dashboard · งานประชาสัมพันธ์ & โสตทัศนูปกรณ์</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>??</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -152,20 +152,20 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 
 <!-- Header -->
 <div class="hdr">
-  <div class="hdr-tag">?? Analytics · ฝ่ายเทคโนโลยีการศึกษา</div>
+  <div class="hdr-tag">📡 Analytics · ฝ่ายเทคโนโลยีการศึกษา</div>
   <h1>งานประชาสัมพันธ์ <em>&</em> โสตทัศนูปกรณ์ <em>Dashboard</em></h1>
   <div class="hdr-sub">วิเคราะห์ภาระงานรายบุคคล · กรองตามช่วงเวลา · แสดงประเภทงาน</div>
   <div class="hdr-meta">
     <span>ข้อมูล ณ <strong id="lastUpdate">—</strong></span>
     <span>รวม <strong id="totalCount">—</strong> รายการ</span>
-    <button class="reload-btn" id="reloadBtn">?? รีโหลดข้อมูล</button>
+    <button class="reload-btn" id="reloadBtn">🔄 รีโหลดข้อมูล</button>
   </div>
 </div>
 
 <!-- Filter bar (แสดงทันที แต่ disable ก่อน data พร้อม) -->
 <div class="filter-bar" id="filterSection">
   <div class="filter-group">
-    <span class="filter-label">?? กรองตาม</span>
+    <span class="filter-label">📅 กรองตาม</span>
     <div class="task-toggle">
       <button class="seg-btn active" data-v="year">รายปี</button>
       <button class="seg-btn" data-v="month">รายเดือน</button>
@@ -178,7 +178,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
   <div class="divider"></div>
   <div class="filter-group">
-    <span class="filter-label">?? ด้านออกแบบฯ</span>
+    <span class="filter-label">📌 ด้านออกแบบฯ</span>
     <div class="task-toggle">
       <button class="task-btn design active" data-t="design"><span class="dot"></span> ออกแบบสื่อ</button>
       <button class="task-btn photo active" data-t="photo"><span class="dot"></span> ถ่ายภาพ</button>
@@ -188,7 +188,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
   <div class="divider"></div>
   <div class="filter-group">
-    <span class="filter-label">?? ด้านประชาสัมพันธ์</span>
+    <span class="filter-label">📣 ด้านประชาสัมพันธ์</span>
     <div class="task-toggle">
       <button class="task-btn pr active" data-t="pr"><span class="dot"></span> ประชาสัมพันธ์</button>
     </div>
@@ -197,11 +197,11 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 
 <!-- KPI Row — skeleton ก่อน data พร้อม -->
 <div class="kpi-row" id="kpiSection">
-  <div class="kpi k1">   <div class="kpi-ico">??</div><div class="kpi-n" id="k-design"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ออกแบบสื่อ</div></div>
-  <div class="kpi k-photo"><div class="kpi-ico">??</div><div class="kpi-n" id="k-photo"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ถ่ายภาพ</div></div>
-  <div class="kpi k2">   <div class="kpi-ico">??</div><div class="kpi-n" id="k-video"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ตัดต่อวิดีโอ</div></div>
-  <div class="kpi k-soat"><div class="kpi-ico">??</div><div class="kpi-n" id="k-soat"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">โสตฯ/อื่นๆ</div></div>
-  <div class="kpi k-pr"> <div class="kpi-ico">??</div><div class="kpi-n" id="k-pr"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ประชาสัมพันธ์</div></div>
+  <div class="kpi k1">   <div class="kpi-ico">🎨</div><div class="kpi-n" id="k-design"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ออกแบบสื่อ</div></div>
+  <div class="kpi k-photo"><div class="kpi-ico">📷</div><div class="kpi-n" id="k-photo"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ถ่ายภาพ</div></div>
+  <div class="kpi k2">   <div class="kpi-ico">🎬</div><div class="kpi-n" id="k-video"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ตัดต่อวิดีโอ</div></div>
+  <div class="kpi k-soat"><div class="kpi-ico">🔊</div><div class="kpi-n" id="k-soat"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">โสตฯ/อื่นๆ</div></div>
+  <div class="kpi k-pr"> <div class="kpi-ico">📣</div><div class="kpi-n" id="k-pr"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ประชาสัมพันธ์</div></div>
 </div>
 
 <div id="mainContent">
@@ -210,7 +210,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 <div class="g3" style="margin-bottom:16px">
   <div class="card">
     <div class="ch">
-      <div class="ct"><span class="ico">??</span> แนวโน้มตามเวลา</div>
+      <div class="ct"><span class="ico">📈</span> แนวโน้มตามเวลา</div>
       <div class="cb" id="chartPeriodLabel">ทั้งหมด</div>
     </div>
     <!-- skeleton chart placeholder -->
@@ -219,7 +219,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
   <div class="card" style="display:flex;flex-direction:column">
     <div class="ch">
-      <div class="ct"><span class="ico">??</span> สัดส่วนรายบุคคล</div>
+      <div class="ct"><span class="ico">🏅</span> สัดส่วนรายบุคคล</div>
     </div>
     <div id="rankBars" class="rank-bars" style="flex:1">
       <!-- skeleton rank bars -->
@@ -234,12 +234,12 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 <div class="sl">รายบุคคล</div>
 <div class="g2" style="margin-bottom:16px">
   <div class="card">
-    <div class="ch"><div class="ct"><span class="ico">??</span> ด้านออกแบบฯ รายบุคคล</div></div>
+    <div class="ch"><div class="ct"><span class="ico">🎨</span> ด้านออกแบบฯ รายบุคคล</div></div>
     <div id="designSkel" class="skel" style="height:220px;border-radius:10px"></div>
     <canvas id="designChart" style="max-height:220px;display:none"></canvas>
   </div>
   <div class="card">
-    <div class="ch"><div class="ct"><span class="ico">??</span> ด้านประชาสัมพันธ์ รายบุคคล</div></div>
+    <div class="ch"><div class="ct"><span class="ico">📣</span> ด้านประชาสัมพันธ์ รายบุคคล</div></div>
     <div id="prSkel" class="skel" style="height:220px;border-radius:10px"></div>
     <canvas id="prChart" style="max-height:220px;display:none"></canvas>
   </div>
@@ -248,15 +248,15 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 <div class="sl">รายชื่องานทั้งหมด</div>
 <div class="card" style="margin-bottom:2rem">
   <div class="ch" style="flex-wrap:wrap;gap:.5rem">
-    <div class="ct" style="color:#5a7ef5"><span class="ico">??</span> รายชื่องานแยกตามประเภท & ผู้รับผิดชอบ</div>
+    <div class="ct" style="color:#5a7ef5"><span class="ico">📋</span> รายชื่องานแยกตามประเภท & ผู้รับผิดชอบ</div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
       <select id="jobTypeFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— ประเภทงาน ทั้งหมด —</option>
-        <option value="design">?? ออกแบบสื่อ</option>
-        <option value="photo">?? ถ่ายภาพ</option>
-        <option value="video">?? ตัดต่อวิดีโอ</option>
-        <option value="soat">?? โสตฯ/อื่นๆ</option>
-        <option value="pr">?? ประชาสัมพันธ์</option>
+        <option value="design">🎨 ออกแบบสื่อ</option>
+        <option value="photo">📷 ถ่ายภาพ</option>
+        <option value="video">🎬 ตัดต่อวิดีโอ</option>
+        <option value="soat">🔊 โสตฯ/อื่นๆ</option>
+        <option value="pr">📣 ประชาสัมพันธ์</option>
       </select>
       <select id="jobEmpFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>
@@ -264,7 +264,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
       <select id="jobOwnerFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— เจ้าของงาน ทั้งหมด —</option>
       </select>
-      <input id="jobSearch" placeholder="?? ค้นหาชื่องาน..." style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px;min-width:180px">
+      <input id="jobSearch" placeholder="🔍 ค้นหาชื่องาน..." style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px;min-width:180px">
     </div>
   </div>
   <div style="overflow-x:auto">
@@ -395,11 +395,9 @@ function buildDB(csv){
   const rawRows=[];
   const empAllSet=new Set(),yearSet=new Set(),monthSet=new Set();
   const emp_year={},emp_month={},monthly_totals={};
-
-  console.log('[buildDB] total lines:', lines.length, '| header:', lines[0]?.substring(0,60));
   for(let i=1;i<lines.length;i++){
     const row=parseCSVLine(lines[i]);
-    if(i<=2) console.log('[buildDB] row'+i+' cols:'+row.length+' col0:'+row[0]?.substring(0,15)+' col4:'+row[4]);
+    if(i<=2)
     if(row.length<5) continue;
 
     const assignDate=clean(row[COL.assignDate]);
@@ -731,7 +729,7 @@ function update(){
 // ============================================================
 // JOB TABLE
 // ============================================================
-const TAG_ICON={design:'??',photo:'??',video:'??',soat:'??',pr:'??'};
+const TAG_ICON={design:'🎨',photo:'📷',video:'🎬',soat:'🔊',pr:'📣'};
 const TAG_LABEL={design:'ออกแบบสื่อ',photo:'ถ่ายภาพ',video:'ตัดต่อวิดีโอ',soat:'โสตฯ/อื่นๆ',pr:'ประชาสัมพันธ์'};
 
 function rowInPeriod(r){
@@ -824,9 +822,7 @@ function jobChangePage(dir){
 // ✅ LOAD DATA — Cache-first strategy
 // ============================================================
 function processCSV(csv, fromCache){
-  console.log('[processCSV] csv length:', csv?.length, '| first80:', csv?.substring(0,80));
   DB=buildDB(csv);
-  console.log('[processCSV] DB rows:', DB?.rawRows?.length, '| employees:', DB?.employees?.length);
   const now=new Date();
   document.getElementById('lastUpdate').textContent=
     fromCache ? '(จาก cache) ' + new Date(parseInt(localStorage.getItem(LS_TS_KEY)||0))
