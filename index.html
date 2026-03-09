@@ -112,7 +112,9 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 
 /* Rank bars */
 .rank-bars{display:flex;flex-direction:column;gap:0;flex:1;justify-content:space-between}
-.rb-row{display:flex;align-items:center;gap:8px;flex:1;min-height:0;padding:3px 0}
+.rb-row{display:flex;align-items:center;gap:8px;flex:1;min-height:0;padding:3px 0;cursor:pointer;border-radius:6px;transition:background .15s}
+.rb-row:hover{background:rgba(0,229,176,.06)}
+.rb-row.active{background:rgba(0,229,176,.12);outline:1px solid rgba(0,229,176,.3)}
 .rb-name{font-size:11px;font-weight:600;color:var(--t1);width:90px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rb-track{flex:1;height:100%;min-height:20px;background:rgba(255,255,255,.05);border-radius:5px;overflow:hidden;display:flex}
 .rb-seg{height:100%;transition:width .8s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:700;min-width:0}
@@ -209,7 +211,13 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
     </div>
     <div id="rankBars" class="rank-bars" style="flex:1;overflow:hidden"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div id="rankPageInfo" style="font-size:11px;color:var(--t2)"></div>
+      <div id="ownerBadge" style="display:none;align-items:center;gap:4px;background:rgba(0,229,176,.12);border:1px solid rgba(0,229,176,.3);border-radius:20px;padding:2px 10px;font-size:11px;color:#00e5b0;font-weight:600">
+        <span id="ownerBadgeText"></span>
+        <span onclick="clearOwnerFilter()" style="cursor:pointer;margin-left:4px;opacity:.7">✕</span>
+      </div>
+    </div>
       <div style="display:flex;gap:6px">
         <button id="rankPrev" onclick="rankChangePage(-1)" style="background:var(--card2);color:var(--t1);border:1px solid var(--border);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px">◀</button>
         <button id="rankNext" onclick="rankChangePage(1)"  style="background:var(--card2);color:var(--t1);border:1px solid var(--border);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px">▶</button>
@@ -308,15 +316,15 @@ const COL = {
   pr8: 24,        // Line OA
   pr9: 25,        // TikTok
   pr10: 26,       // IG
-  pr11: 27,       // Web/TV
-  pr12: 27,       // Line Lib-Team
-  pr13: 28,       // ประสานงาน
-  pr14: 29,       // อื่นๆ ประชาสัมพันธ์
-  empExhibit: 30  // ผู้รับมอบหมายนิทรรศการ
+  pr11: 27,       // Web/TV (LED)
+  pr12: 28,       // Line Lib-Team
+  pr13: 29,       // ประสานงาน
+  pr14: 30,       // อื่นๆ ประชาสัมพันธ์
+  empExhibit: 31  // ผู้รับมอบหมายนิทรรศการ
 };
 
 let DB = null;
-let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true };
+let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true, selectedOwner: '' };
 let jobCurrentPage = 1;
 let rankCurrentPage = 1;
 let timelineChartInst = null, designChartInst = null, prChartInst = null;
@@ -478,7 +486,16 @@ function buildDB(csv) {
       clean(row[COL.soat2]),  // ผลิตรายการ
       clean(row[COL.soat3]),  // อื่นๆ โสตฯ
     ];
-    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, subTags, emps, taskEmps, soatCols, year, ym });
+    // PR 6 channels
+    const prChannels = {
+      fb:      getName(row[COL.pr7])  ? [getName(row[COL.pr7])]  : [],
+      lineoa:  getName(row[COL.pr8])  ? [getName(row[COL.pr8])]  : [],
+      tiktok:  getName(row[COL.pr9])  ? [getName(row[COL.pr9])]  : [],
+      ig:      getName(row[COL.pr10]) ? [getName(row[COL.pr10])] : [],
+      web:     getName(row[COL.pr11]) ? [getName(row[COL.pr11])] : [],
+      libteam: getName(row[COL.pr12]) ? [getName(row[COL.pr12])] : [],
+    };
+    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, subTags, emps, taskEmps, soatCols, prChannels, year, ym });
 
     // aggregate per employee — นับเฉพาะ task ที่ตัวเองทำ
     const addEmp = (emp, field) => {
@@ -502,6 +519,8 @@ function buildDB(csv) {
         addEmp(e, field);
       });
     });
+    // emps PR channels เข้า empAllSet และ empPrSet
+    Object.values(prChannels).flat().forEach(e => { empAllSet.add(e); empPrSet.add(e); });
     // emps จาก col 8 ใส่ใน empAllSet แต่ไม่ใส่ใน empDesignOnlySet
     emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>empAllSet.add(e));
 
@@ -555,19 +574,28 @@ function getKeys() {
 // ============================================================
 function getEmpData(emp) {
   let d=0, ph=0, v=0, s=0, pr=0;
+  let fb=0, lineoa=0, tiktok=0, ig=0, web=0, libteam=0;
   const empKeys = getKeys();
-  // นับจาก rawRows — 1 งาน = 1 ครั้ง ไม่นับซ้ำ
   DB.rawRows.forEach(r => {
-    if (!r.emps.includes(emp)) return;
     if (!empKeys.includes(r.ym) && !empKeys.some(k => r.ym.startsWith(k))) return;
-    if (r.tags.includes('design')) d++;
-    if (r.tags.includes('photo'))  ph++;
-    if (r.tags.includes('video'))  v++;
-    if (r.tags.includes('soat'))   s++;
-    if (r.tags.includes('pr'))     pr++;
+    if (state.selectedOwner && r.owner !== state.selectedOwner) return;
+    // design/photo/video/soat — นับจาก taskEmps ของแต่ละ emp
+    const te = r.taskEmps || {};
+    if ((te.design||[]).includes(emp)) d++;
+    if ((te.photo||[]).includes(emp))  ph++;
+    if ((te.video||[]).includes(emp))  v++;
+    if ((te.soat||[]).includes(emp))   s++;
+    // PR channels — นับจาก prChannels แยก 6 ช่อง
+    const pc = r.prChannels || {};
+    if ((pc.fb||[]).includes(emp))      { fb++;      pr++; }
+    if ((pc.lineoa||[]).includes(emp))  { lineoa++;  pr++; }
+    if ((pc.tiktok||[]).includes(emp))  { tiktok++;  pr++; }
+    if ((pc.ig||[]).includes(emp))      { ig++;      pr++; }
+    if ((pc.web||[]).includes(emp))     { web++;     pr++; }
+    if ((pc.libteam||[]).includes(emp)) { libteam++; pr++; }
   });
   const designTotal = (state.showDesign?d:0)+(state.showPhoto?ph:0)+(state.showVideo?v:0)+(state.showSoat?s:0);
-  return { design:d, photo:ph, video:v, soat:s, pr, designTotal };
+  return { design:d, photo:ph, video:v, soat:s, pr, fb, lineoa, tiktok, ig, web, libteam, designTotal };
 }
 
 // ============================================================
@@ -585,6 +613,7 @@ function update() {
   const kpiKeys = getKeys();
   DB.rawRows.forEach(r => {
     if (!kpiKeys.includes(r.ym) && !kpiKeys.some(k => r.ym.startsWith(k))) return;
+    if (state.selectedOwner && r.owner !== state.selectedOwner) return;
     if (state.showDesign && r.tags.includes('design')) tDesign++;
     if (state.showPhoto  && r.tags.includes('photo'))  tPhoto++;
     if (state.showVideo  && r.tags.includes('video'))  tVideo++;
@@ -593,9 +622,11 @@ function update() {
   });
 
   // นับงานทั้งหมด = rawRows ที่ผ่าน period filter (1 row = 1 งาน ไม่นับซ้ำตาม tag)
-  const tTotal = DB.rawRows.filter(r =>
-    kpiKeys.includes(r.ym) || kpiKeys.some(k => r.ym.startsWith(k))
-  ).length;
+  const tTotal = DB.rawRows.filter(r => {
+    if (!kpiKeys.includes(r.ym) && !kpiKeys.some(k => r.ym.startsWith(k))) return false;
+    if (state.selectedOwner && r.owner !== state.selectedOwner) return false;
+    return true;
+  }).length;
   setNum('k-design', tDesign);
   setNum('k-photo',  tPhoto);
   setNum('k-video',  tVideo);
@@ -626,15 +657,16 @@ function update() {
   rankPage.forEach(([name, cnt]) => {
     const pct = (cnt/maxOwner*100).toFixed(1);
     const div = document.createElement('div');
-    div.className = 'rb-row';
+    div.className = 'rb-row' + (state.selectedOwner === name ? ' active' : '');
     div.innerHTML = `
       <div class="rb-name" title="${name}">${name}</div>
       <div class="rb-track">
-        <div class="rb-seg" style="width:${pct}%;background:linear-gradient(90deg,#00e5b0,#00cfff)">
+        <div class="rb-seg" style="width:${pct}%;background:${state.selectedOwner===name?'linear-gradient(90deg,#ffb700,#ff6b6b)':'linear-gradient(90deg,#00e5b0,#00cfff)'}">
           <span style="color:#000;font-size:9px;padding:0 3px">${cnt}</span>
         </div>
       </div>
       <div class="rb-total">${cnt}</div>`;
+    div.addEventListener('click', () => toggleOwnerFilter(name));
     rankDiv.appendChild(div);
   });
   const rankInfo = document.getElementById('rankPageInfo');
@@ -650,12 +682,12 @@ function update() {
     : DB.months;
   const labels = tlKeys;
   const getData = (field) => tlKeys.map(k => {
-    if (state.periodType === 'year') {
-      // นับจาก rawRows ต่อปี ไม่ซ้ำต่อ emp
-      return DB.rawRows.filter(r => r.ym.startsWith(k) && r.tags.includes(field)).length;
-    } else {
-      return (DB.monthly_totals[k]||{})[field]||0;
-    }
+    return DB.rawRows.filter(r => {
+      if (!r.ym.startsWith(k)) return false;
+      if (!r.tags.includes(field)) return false;
+      if (state.selectedOwner && r.owner !== state.selectedOwner) return false;
+      return true;
+    }).length;
   });
 
   const datasets = [];
@@ -688,16 +720,51 @@ function update() {
               y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 
-  // PR per person chart
-  const actPr = sorted.filter(e=>e.pr>0);
+  // PR per person chart — เฉพาะ 6 channels
+  const PR_CHANNELS = [
+    { key:'fb',      label:'FB',           color:'rgba(59,130,246,0.8)' },
+    { key:'lineoa',  label:'Line OA',      color:'rgba(34,197,94,0.8)'  },
+    { key:'tiktok',  label:'TikTok',       color:'rgba(236,72,153,0.8)' },
+    { key:'ig',      label:'IG',           color:'rgba(251,146,60,0.8)' },
+    { key:'web',     label:'Web/TV (LED)', color:'rgba(99,102,241,0.8)' },
+    { key:'libteam', label:'Line Lib-Team',color:'rgba(20,184,166,0.8)' },
+  ];
+  // เฉพาะคนที่มีอย่างน้อย 1 channel
+  const actPr = sorted.filter(e => PR_CHANNELS.some(ch => e[ch.key] > 0));
   if (prChartInst) prChartInst.destroy();
   prChartInst = new Chart(document.getElementById('prChart'),{
-    type:'bar', data:{labels:actPr.map(e=>e.name), datasets:[
-      {label:'ประชาสัมพันธ์',data:actPr.map(e=>e.pr),backgroundColor:'rgba(159,122,234,0.75)',borderRadius:4},
-    ]},
-    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
-      scales:{x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
-              y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
+    type:'bar',
+    data:{
+      labels: actPr.map(e=>e.name),
+      datasets: PR_CHANNELS.map(ch => ({
+        label: ch.label,
+        data:  actPr.map(e => e[ch.key]||0),
+        backgroundColor: ch.color,
+        borderRadius: 3,
+        stack: 'pr'
+      }))
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{
+          display:true,
+          position:'top',
+          labels:{font:{size:10},padding:8,color:'#a0aec0',usePointStyle:true},
+          onClick(e, legendItem, legend) {
+            // toggle dataset visibility (Chart.js default behaviour)
+            const idx = legendItem.datasetIndex;
+            const meta = legend.chart.getDatasetMeta(idx);
+            meta.hidden = !meta.hidden;
+            legend.chart.update();
+          }
+        }
+      },
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0',font:{size:10}}},
+        y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0'},beginAtZero:true}
+      }
+    }
   });
 }
 
@@ -741,6 +808,7 @@ function renderJobTable() {
 
   const rows = DB.rawRows.filter(r => {
     if (!tblKeys.includes(r.ym) && !tblKeys.some(k => r.ym.startsWith(k))) return false;
+    if (state.selectedOwner && r.owner !== state.selectedOwner) return false;
     if (typeFilter) {
       // map option value → taskEmps sub-key
       const TYPE_MAP = {
@@ -815,6 +883,24 @@ function jobChangePage(dir) {
 }
 function rankChangePage(dir) {
   rankCurrentPage = Math.max(1, rankCurrentPage + dir);
+  update();
+}
+function toggleOwnerFilter(name) {
+  state.selectedOwner = (state.selectedOwner === name) ? '' : name;
+  rankCurrentPage = 1;
+  const badge = document.getElementById('ownerBadge');
+  const badgeText = document.getElementById('ownerBadgeText');
+  if (state.selectedOwner) {
+    badge.style.display = 'flex';
+    badgeText.textContent = '🏷 ' + state.selectedOwner;
+  } else {
+    badge.style.display = 'none';
+  }
+  update();
+}
+function clearOwnerFilter() {
+  state.selectedOwner = '';
+  document.getElementById('ownerBadge').style.display = 'none';
   update();
 }
 
