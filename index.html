@@ -10,41 +10,42 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root{
-  --bg:#080f0f;--bg2:#0d1a1a;--card:#0f2020;--card2:#132828;
-  --t1:#e8f5f0;--t2:#7ab8a8;--t3:#2d5248;
-  --a1:#00e5b0;--a2:#00c896;--a3:#ffb700;
-  --done:#00e5b0;--inp:#ffb700;
-  --border:rgba(0,229,176,.08);--bd:rgba(0,229,176,.08);
-  --design:#00e5b0;--photo:#00cfff;--video:#ff6b6b;--soat:#ffb700;--pr:#a78bfa;
+  --bg:#f0f4f8;--bg2:#ffffff;--card:#ffffff;--card2:#f5f7fa;
+  --t1:#2d3748;--t2:#718096;--t3:#a0aec0;
+  --a1:#38b2ac;--a2:#4299e1;--a3:#ed8936;
+  --done:#38b2ac;--inp:#ed8936;
+  --border:rgba(0,0,0,.08);--bd:rgba(0,0,0,.08);
+  --design:#7c9ef5;--photo:#56ccb2;--video:#f687b3;--soat:#f6ad55;--pr:#9f7aea;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:14px;min-height:100vh;background-image:radial-gradient(ellipse at 20% 20%,rgba(0,229,176,.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(167,139,250,.04) 0%,transparent 60%)}
+body{background:linear-gradient(135deg,#e8f4fd 0%,#f0f4f8 40%,#fef0f8 100%);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:14px;min-height:100vh}
 .wrap{max-width:1400px;margin:0 auto;padding:24px 20px}
 
 /* Header */
-.hdr{padding:24px 28px 20px;background:var(--card);border-radius:16px;margin-bottom:20px;border:1px solid var(--border);position:relative;overflow:hidden}
-.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#00e5b0,#00cfff,#a78bfa,#ffb700)}
-.hdr-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,176,.08);border:1px solid rgba(0,229,176,.25);color:var(--a1);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:8px}
+.hdr{padding:24px 28px 20px;background:linear-gradient(135deg,#ffffff 0%,#f8fbff 100%);border-radius:16px;margin-bottom:20px;border:1px solid rgba(99,179,237,.2);position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(66,153,225,.1)}
+.hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#7c9ef5,#56ccb2,#9f7aea,#f6ad55)}
+.hdr-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(124,158,245,.1);border:1px solid rgba(124,158,245,.3);color:#5a7ef5;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:8px}
 .hdr-tag::before{content:'●';font-size:7px;animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 .hdr h1{font-size:22px;font-weight:800;line-height:1.2}
-.hdr h1 em{font-style:normal;color:var(--a1)}
+.hdr h1 em{font-style:normal;color:#5a7ef5}
 .hdr-sub{font-size:12px;color:var(--t2);margin-top:5px}
 .hdr-meta{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
 .hdr-meta span{font-size:11px;color:var(--t2)}
 .hdr-meta strong{color:var(--t1)}
-.reload-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,176,.1);border:1px solid rgba(0,229,176,.3);color:var(--a1);font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all .2s}
-.reload-btn:hover{background:rgba(79,142,247,.22)}
+.reload-btn{display:inline-flex;align-items:center;gap:6px;background:#ebedff;border:1px solid rgba(124,158,245,.4);color:#4c6ef5;font-family:inherit;font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all .2s}
+.reload-btn:hover{background:rgba(124,158,245,.2)}
 
 /* Filter bar */
-.filter-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.filter-bar{background:#ffffff;border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
 .filter-group{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .filter-label{font-size:11px;font-weight:600;color:var(--t2);letter-spacing:.5px;white-space:nowrap}
 .task-toggle{display:flex;gap:8px;flex-wrap:wrap}
 .seg-btn{border:none;background:transparent;color:var(--t2);font-family:inherit;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap}
-.seg-btn.active{background:var(--card2);color:var(--t1)}
-.seg-btn:hover:not(.active){color:var(--t1);background:rgba(255,255,255,.06)}
-select.period-sel{background:var(--bg2);border:1px solid var(--border);color:var(--t1);font-family:inherit;font-size:12px;padding:7px 32px 7px 12px;border-radius:8px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%238a9bc4' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:10px;outline:none}
+.seg-btn.active{background:#ebf4ff;color:#3182ce;border-radius:6px}
+.seg-btn:hover:not(.active){color:var(--t1);background:rgba(0,0,0,.04)}
+select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(--t1);font-family:inherit;font-size:12px;padding:7px 32px 7px 12px;border-radius:8px;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%238a9bc4' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:10px;outline:none}
 .task-btn{display:flex;align-items:center;gap:6px;border:1.5px solid var(--border);background:transparent;color:var(--t2);font-family:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;transition:all .2s}
 .task-btn .dot{width:8px;height:8px;border-radius:50%}
 .task-btn.design .dot{background:var(--design)}
@@ -52,76 +53,76 @@ select.period-sel{background:var(--bg2);border:1px solid var(--border);color:var
 .task-btn.video .dot{background:var(--video)}
 .task-btn.soat .dot{background:var(--soat)}
 .task-btn.pr .dot{background:var(--pr)}
-.task-btn.active.design{border-color:var(--design);background:rgba(0,229,176,.1);color:#00e5b0}
-.task-btn.active.photo{border-color:var(--photo);background:rgba(0,207,255,.1);color:#00cfff}
-.task-btn.active.video{border-color:var(--video);background:rgba(255,107,107,.1);color:#ff6b6b}
-.task-btn.active.soat{border-color:var(--soat);background:rgba(255,183,0,.1);color:#ffb700}
-.task-btn.active.pr{border-color:var(--pr);background:rgba(167,139,250,.12);color:#a78bfa}
-.divider{width:1px;height:32px;background:var(--border);flex-shrink:0}
+.task-btn.active.design{border-color:#7c9ef5;background:#ebedff;color:#4c6ef5}
+.task-btn.active.photo{border-color:#56ccb2;background:#e6faf5;color:#2a9d8f}
+.task-btn.active.video{border-color:#f687b3;background:#fff0f6;color:#d6336c}
+.task-btn.active.soat{border-color:#f6ad55;background:#fffaf0;color:#dd6b20}
+.task-btn.active.pr{border-color:#9f7aea;background:#f5f0ff;color:#6b46c1}
+.divider{width:1px;height:32px;background:rgba(0,0,0,.1);flex-shrink:0}
 
 /* KPI */
 .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 16px;position:relative;overflow:hidden}
+.kpi{background:#ffffff;border:none;border-radius:16px;padding:18px 16px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.07)}
 .kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
-.kpi.k1::after{background:linear-gradient(90deg,#00e5b0,#00cfff)}
-.kpi.k-photo::after{background:linear-gradient(90deg,#00cfff,#00e5b0)}
-.kpi.k2::after{background:linear-gradient(90deg,#ff6b6b,#ffb700)}
-.kpi.k-soat::after{background:linear-gradient(90deg,#ffb700,#ff6b6b)}
-.kpi.k-pr::after{background:linear-gradient(90deg,#a78bfa,#00cfff)}
+.kpi.k1::after{background:linear-gradient(90deg,#7c9ef5,#a3bffa)}
+.kpi.k-photo::after{background:linear-gradient(90deg,#56ccb2,#81e6d9)}
+.kpi.k2::after{background:linear-gradient(90deg,#f687b3,#fbb6ce)}
+.kpi.k-soat::after{background:linear-gradient(90deg,#f6ad55,#fbd38d)}
+.kpi.k-pr::after{background:linear-gradient(90deg,#9f7aea,#b794f4)}
 .kpi.k3::after{background:linear-gradient(90deg,#a78bfa,var(--a1))}
 .kpi-ico{font-size:22px;margin-bottom:8px}
 .kpi-n{font-size:32px;font-weight:800;line-height:1}
-.kpi.k1 .kpi-n{color:var(--design)}
-.kpi.k-photo .kpi-n{color:var(--photo)}
-.kpi.k2 .kpi-n{color:var(--video)}
-.kpi.k-soat .kpi-n{color:var(--soat)}
-.kpi.k-pr .kpi-n{color:var(--pr)}
+.kpi.k1 .kpi-n{color:#4c6ef5}
+.kpi.k-photo .kpi-n{color:#2a9d8f}
+.kpi.k2 .kpi-n{color:#d6336c}
+.kpi.k-soat .kpi-n{color:#dd6b20}
+.kpi.k-pr .kpi-n{color:#6b46c1}
 .kpi.k3 .kpi-n{color:#a78bfa}
 .kpi-l{font-size:11px;color:var(--t2);margin-top:4px;font-weight:500}
 
 /* Cards / Grid */
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.card{background:#ffffff;border:none;border-radius:16px;padding:18px;box-shadow:0 4px 16px rgba(0,0,0,.07)}
 .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .ct{font-size:13px;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:8px}
-.ct .ico{width:26px;height:26px;background:var(--card2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
-.cb{font-size:10px;background:var(--card2);border:1px solid var(--border);color:var(--t2);padding:3px 9px;border-radius:20px}
+.ct .ico{width:26px;height:26px;background:#f5f7fa;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.cb{font-size:10px;background:#f5f7fa;border:1px solid rgba(0,0,0,.07);color:var(--t2);padding:3px 9px;border-radius:20px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .g3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
-.sl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:12px;margin-top:4px;display:flex;align-items:center;gap:10px}
-.sl::after{content:'';flex:1;height:1px;background:var(--border)}
+.sl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#a0aec0;margin-bottom:12px;margin-top:4px;display:flex;align-items:center;gap:10px}
+.sl::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.08)}
 @media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.g2,.g3{grid-template-columns:1fr}}
 @media(max-width:600px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
 
 /* Table */
 .job-table{width:100%;border-collapse:separate;border-spacing:0 4px}
-.job-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#00c896;padding:0 10px 8px;text-align:left;white-space:nowrap}
-.job-table td{padding:9px 10px;background:var(--bg2);font-size:12px;color:#a0c8b8}
-.job-table td:first-child{border-radius:8px 0 0 8px;font-weight:600;color:#e0f5ee}
+.job-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5a7ef5;padding:0 10px 8px;text-align:left;white-space:nowrap}
+.job-table td{padding:9px 10px;background:#f8faff;font-size:12px;color:#4a5568}
+.job-table td:first-child{border-radius:8px 0 0 8px;font-weight:600;color:#2d3748}
 .job-table td:last-child{border-radius:0 8px 8px 0}
-.job-table tr:hover td{background:var(--card2)}
+.job-table tr:hover td{background:#ebf4ff}
 
 /* Loading/Error */
 .loading-wrap{display:flex;align-items:center;justify-content:center;min-height:200px;gap:12px}
 .loading-text{color:var(--t2);font-size:13px;letter-spacing:1px}
-#errorMsg{display:none;background:rgba(247,79,142,.15);border:1px solid rgba(247,79,142,.4);color:#ffaacc;padding:12px 18px;border-radius:10px;margin:16px 0;font-size:13px}
-.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--a1);border-radius:50%;animation:spin .8s linear infinite}
+#errorMsg{display:none;background:#fff5f5;border:1px solid #feb2b2;color:#c53030;padding:12px 18px;border-radius:10px;margin:16px 0;font-size:13px}
+.spin{width:20px;height:20px;border:2px solid rgba(0,0,0,.1);border-top-color:#5a7ef5;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* Rank bars */
 .rank-bars{display:flex;flex-direction:column;gap:8px}
 .rb-row{display:flex;align-items:center;gap:8px}
 .rb-name{font-size:11px;font-weight:600;color:var(--t1);width:80px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rb-track{flex:1;height:18px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;display:flex}
+.rb-track{flex:1;height:18px;background:rgba(0,0,0,.05);border-radius:4px;overflow:hidden;display:flex}
 .rb-seg{height:100%;transition:width .8s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;min-width:0}
 .rb-total{font-size:11px;font-weight:700;color:var(--t2);width:32px;text-align:right;flex-shrink:0}
 
 /* Tag badges */
 .tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;white-space:nowrap}
-.tag.design{background:rgba(0,229,176,.15);color:#00e5b0}
-.tag.photo{background:rgba(0,207,255,.15);color:#00cfff}
-.tag.video{background:rgba(255,107,107,.15);color:#ff6b6b}
-.tag.soat{background:rgba(255,183,0,.15);color:#ffb700}
-.tag.pr{background:rgba(167,139,250,.15);color:#a78bfa}
+.tag.design{background:#ebedff;color:#4c6ef5}
+.tag.photo{background:#e6faf5;color:#2a9d8f}
+.tag.video{background:#fff0f6;color:#d6336c}
+.tag.soat{background:#fffaf0;color:#dd6b20}
+.tag.pr{background:#f5f0ff;color:#6b46c1}
 </style>
 </head>
 <body>
@@ -222,9 +223,9 @@ select.period-sel{background:var(--bg2);border:1px solid var(--border);color:var
 <div class="sl">รายชื่องานทั้งหมด</div>
 <div class="card" style="margin-bottom:2rem">
   <div class="ch" style="flex-wrap:wrap;gap:.5rem">
-    <div class="ct" style="color:#00e5b0"><span class="ico">📋</span> รายชื่องานแยกตามประเภท & ผู้รับผิดชอบ</div>
+    <div class="ct" style="color:#5a7ef5"><span class="ico">📋</span> รายชื่องานแยกตามประเภท & ผู้รับผิดชอบ</div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
-      <select id="jobTypeFilter" style="background:var(--bg2);color:var(--t1);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:13px">
+      <select id="jobTypeFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— ประเภทงาน ทั้งหมด —</option>
         <option value="design">🎨 ออกแบบสื่อ</option>
         <option value="photo">📷 ถ่ายภาพ</option>
@@ -232,13 +233,13 @@ select.period-sel{background:var(--bg2);border:1px solid var(--border);color:var
         <option value="soat">🔊 โสตฯ/อื่นๆ</option>
         <option value="pr">📣 ประชาสัมพันธ์</option>
       </select>
-      <select id="jobEmpFilter" style="background:var(--bg2);color:var(--t1);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:13px">
+      <select id="jobEmpFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>
       </select>
-      <select id="jobOwnerFilter" style="background:var(--bg2);color:var(--t1);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:13px">
+      <select id="jobOwnerFilter" style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px">
         <option value="">— เจ้าของงาน ทั้งหมด —</option>
       </select>
-      <input id="jobSearch" placeholder="🔍 ค้นหาชื่องาน..." style="background:var(--bg2);color:var(--t1);border:1px solid var(--bd);border-radius:6px;padding:4px 10px;font-size:13px;min-width:180px">
+      <input id="jobSearch" placeholder="🔍 ค้นหาชื่องาน..." style="background:#fff;color:#2d3748;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:4px 10px;font-size:13px;min-width:180px">
     </div>
   </div>
   <div style="overflow-x:auto">
@@ -257,11 +258,11 @@ select.period-sel{background:var(--bg2);border:1px solid var(--border);color:var
     </table>
   </div>
   <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;flex-wrap:wrap;gap:.5rem">
-    <div id="jobCount" style="font-size:12px;color:#00c896;font-weight:500"></div>
+    <div id="jobCount" style="font-size:12px;color:#5a7ef5;font-weight:500"></div>
     <div style="display:flex;align-items:center;gap:8px">
-      <button id="jobPagePrev" onclick="jobChangePage(-1)" style="background:var(--bg2);color:var(--t1);border:1px solid var(--bd);border-radius:6px;padding:3px 12px;cursor:pointer">◀</button>
-      <span style="color:#b0cce0;font-size:13px;font-weight:600">หน้า <span id="jobPageNum">1</span></span>
-      <button id="jobPageNext" onclick="jobChangePage(1)" style="background:var(--bg2);color:var(--t1);border:1px solid var(--bd);border-radius:6px;padding:3px 12px;cursor:pointer">▶</button>
+      <button id="jobPagePrev" onclick="jobChangePage(-1)" style="background:#ffffff;color:#4a5568;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:3px 12px;cursor:pointer">◀</button>
+      <span style="color:#4a5568;font-size:13px;font-weight:600">หน้า <span id="jobPageNum">1</span></span>
+      <button id="jobPageNext" onclick="jobChangePage(1)" style="background:#ffffff;color:#4a5568;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:3px 12px;cursor:pointer">▶</button>
     </div>
   </div>
 </div>
@@ -307,7 +308,7 @@ let jobCurrentPage = 1;
 let timelineChartInst = null, designChartInst = null, prChartInst = null;
 
 Chart.defaults.font.family = "'Sarabun', sans-serif";
-Chart.defaults.color = '#7ab8a8';
+Chart.defaults.color = '#718096';
 
 // ============================================================
 // UTILS
@@ -358,6 +359,7 @@ function buildDB(csv) {
   // skip header row
   const rawRows = [];
   const empDesignSet = new Set(), empPrSet = new Set(), empAllSet = new Set();
+  // empAllSet จะถูก populate จาก task columns เท่านั้น (ไม่รวม 'ไม่ระบุ')
   const yearSet = new Set(), monthSet = new Set();
 
   // aggregates: emp → year/month → counts
@@ -373,7 +375,7 @@ function buildDB(csv) {
     const owner      = clean(row[COL.owner]);
     const assignDate = clean(row[COL.assignDate]);
     const recvDate   = clean(row[COL.receiveDate]);
-    const jobDetail  = clean(row[COL.jobDetail]);
+    const jobDetail  = clean(row[3]) || clean(row[1]);  // เนื้อหา หรือ รหัสงาน
     const empDesign  = clean(row[COL.empDesign]);
     const empExhibit = clean(row[COL.empExhibit]);
 
@@ -397,14 +399,15 @@ function buildDB(csv) {
     }
     if (!year || !ym) continue;
 
-        // ชื่อคนที่รับผิดชอบแต่ละ task (เก็บชื่อใน cell นั้นๆ)
-    const designEmps = [clean(row[COL.design]), clean(row[COL.designVid])].filter(Boolean);
-    const photoEmps  = [clean(row[COL.photo])].filter(Boolean);
-    const videoEmps  = [clean(row[COL.video])].filter(Boolean);
-    const soatEmps   = [clean(row[COL.soat1]), clean(row[COL.soat2]), clean(row[COL.soat3])].filter(Boolean);
+        // split ชื่อคนจาก cell (อาจมีหลายคนคั่น comma)
+    const sp = (v) => clean(v).split(/[,،]/).map(e=>e.trim()).filter(e=>e.length>1);
+    const designEmps = [...sp(row[COL.design]), ...sp(row[COL.designVid])].filter((v,i,a)=>a.indexOf(v)===i);
+    const photoEmps  = sp(row[COL.photo]);
+    const videoEmps  = sp(row[COL.video]);
+    const soatEmps   = [...sp(row[COL.soat1]),...sp(row[COL.soat2]),...sp(row[COL.soat3])].filter((v,i,a)=>a.indexOf(v)===i);
     const prCols     = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
                         COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
-    const prEmps     = prCols.map(c=>clean(row[c])).filter(Boolean);
+    const prEmps     = [...new Set(prCols.flatMap(c=>sp(row[c])))];
 
     const isDesign = designEmps.length > 0;
     const isPhoto  = photoEmps.length > 0;
@@ -420,17 +423,12 @@ function buildDB(csv) {
     if (isSoat)   tags.push('soat');
     if (isPr)     tags.push('pr');
 
-    // รวม emp ทั้งหมดของงานนี้ (unique)
-    const splitEmps = (str) => str.split(/[,\n\r]/).map(e=>e.trim()).filter(e=>e.length>0);
-    const allEmpsRaw = clean(row[COL.empDesign]);
-    const exhibitRaw = clean(row[COL.empExhibit]);
-    const emps = [];
-    if (allEmpsRaw) splitEmps(allEmpsRaw).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
-    if (exhibitRaw) splitEmps(exhibitRaw).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
-    // fallback: รวมจาก task columns
-    [...designEmps,...photoEmps,...videoEmps,...soatEmps,...prEmps].forEach(e=>{
-      if(e && !emps.includes(e)) emps.push(e);
-    });
+    // รวม emp ทั้งหมดของงานนี้ (unique) — ใช้ task columns เป็นหลัก
+    const emps = [...new Set([...designEmps,...photoEmps,...videoEmps,...soatEmps,...prEmps])];
+    if (!emps.length) {
+      // fallback ใช้ col 8
+      sp(row[COL.empDesign]).forEach(e=>{ if(!emps.includes(e)) emps.push(e); });
+    }
     if (!emps.length) emps.push('ไม่ระบุ');
 
     yearSet.add(year); monthSet.add(ym);
@@ -447,11 +445,12 @@ function buildDB(csv) {
       if (!emp_month[emp][ym]) emp_month[emp][ym] = {design:0,photo:0,video:0,soat:0,pr:0};
       emp_month[emp][ym][field]++;
     };
-    designEmps.forEach(e=>{ empAllSet.add(e); empDesignSet.add(e); addEmp(e,'design'); });
-    photoEmps.forEach(e=>{  empAllSet.add(e); empDesignSet.add(e); addEmp(e,'photo');  });
-    videoEmps.forEach(e=>{  empAllSet.add(e); empDesignSet.add(e); addEmp(e,'video');  });
-    soatEmps.forEach(e=>{   empAllSet.add(e); empDesignSet.add(e); addEmp(e,'soat');   });
-    prEmps.forEach(e=>{     empAllSet.add(e); empPrSet.add(e);     addEmp(e,'pr');     });
+    const addE = (e,set,field) => { if(e&&e!=='ไม่ระบุ'){empAllSet.add(e);set.add(e);addEmp(e,field);} };
+    designEmps.forEach(e=>addE(e,empDesignSet,'design'));
+    photoEmps.forEach(e=> addE(e,empDesignSet,'photo'));
+    videoEmps.forEach(e=> addE(e,empDesignSet,'video'));
+    soatEmps.forEach(e=>  addE(e,empDesignSet,'soat'));
+    prEmps.forEach(e=>    addE(e,empPrSet,    'pr'));
 
     // monthly totals
     if (!monthly_totals[ym]) monthly_totals[ym] = { design:0, photo:0, video:0, soat:0, pr:0 };
@@ -469,7 +468,7 @@ function buildDB(csv) {
   const sortedMonths = sortedYears.flatMap(y =>
     months.filter(m=>m.startsWith(y)).sort((a,b)=>a.localeCompare(b))
   );
-  const employees = [...empAllSet].sort();
+  const employees = [...empAllSet].filter(e=>e&&e!=='ไม่ระบุ').sort();
 
   return { years, months: sortedMonths, employees, emp_year, emp_month, monthly_totals, rawRows };
 }
@@ -572,8 +571,8 @@ function update() {
     div.innerHTML = `
       <div class="rb-name">${e.name}</div>
       <div class="rb-track">
-        ${e.designTotal>0?`<div class="rb-seg" style="width:${dPct}%;background:linear-gradient(90deg,#00e5b0,#00cfff)"><span style="color:#fff;font-size:9px;padding:0 3px">${e.designTotal}</span></div>`:''}
-        ${e.pr>0?`<div class="rb-seg" style="width:${pPct}%;background:linear-gradient(90deg,#a78bfa,#ff6b6b)"><span style="color:#000;font-size:9px;padding:0 3px">${e.pr}</span></div>`:''}
+        ${e.designTotal>0?`<div class="rb-seg" style="width:${dPct}%;background:linear-gradient(90deg,#7c9ef5,#56ccb2)"><span style="color:#fff;font-size:9px;padding:0 3px">${e.designTotal}</span></div>`:''}
+        ${e.pr>0?`<div class="rb-seg" style="width:${pPct}%;background:linear-gradient(90deg,#9f7aea,#f687b3)"><span style="color:#000;font-size:9px;padding:0 3px">${e.pr}</span></div>`:''}
       </div>
       <div class="rb-total">${total}</div>`;
     rankDiv.appendChild(div);
@@ -593,18 +592,18 @@ function update() {
   });
 
   const datasets = [];
-  if(state.showDesign) datasets.push({label:'ออกแบบสื่อ',data:getData('design'),backgroundColor:'rgba(0,229,176,0.8)',borderRadius:4,stack:'a'});
-  if(state.showPhoto)  datasets.push({label:'ถ่ายภาพ',   data:getData('photo'), backgroundColor:'rgba(0,207,255,0.75)', borderRadius:4,stack:'a'});
-  if(state.showVideo)  datasets.push({label:'ตัดต่อวิดีโอ',data:getData('video'),backgroundColor:'rgba(255,107,107,0.75)', borderRadius:4,stack:'a'});
-  if(state.showSoat)   datasets.push({label:'โสตฯ',      data:getData('soat'), backgroundColor:'rgba(255,183,0,0.75)', borderRadius:4,stack:'a'});
-  if(state.showPr)     datasets.push({label:'ประชาสัมพันธ์',data:getData('pr'), backgroundColor:'rgba(167,139,250,0.75)', borderRadius:4,stack:'b'});
+  if(state.showDesign) datasets.push({label:'ออกแบบสื่อ',data:getData('design'),backgroundColor:'rgba(124,158,245,0.75)',borderRadius:4,stack:'a'});
+  if(state.showPhoto)  datasets.push({label:'ถ่ายภาพ',   data:getData('photo'), backgroundColor:'rgba(86,204,178,0.75)', borderRadius:4,stack:'a'});
+  if(state.showVideo)  datasets.push({label:'ตัดต่อวิดีโอ',data:getData('video'),backgroundColor:'rgba(246,135,179,0.75)', borderRadius:4,stack:'a'});
+  if(state.showSoat)   datasets.push({label:'โสตฯ',      data:getData('soat'), backgroundColor:'rgba(246,173,85,0.75)', borderRadius:4,stack:'a'});
+  if(state.showPr)     datasets.push({label:'ประชาสัมพันธ์',data:getData('pr'), backgroundColor:'rgba(159,122,234,0.75)', borderRadius:4,stack:'b'});
 
   if (timelineChartInst) timelineChartInst.destroy();
   timelineChartInst = new Chart(document.getElementById('timelineChart'),{
     type:'bar', data:{labels, datasets},
-    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:10,color:'#7ab8a8'}}},
-      scales:{x:{stacked:true,grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#2d5248',font:{size:10}}},
-              y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#2d5248'},beginAtZero:true}}}
+    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:10,color:'#718096'}}},
+      scales:{x:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0',font:{size:10}}},
+              y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 
   // Design per person chart
@@ -612,14 +611,14 @@ function update() {
   if (designChartInst) designChartInst.destroy();
   designChartInst = new Chart(document.getElementById('designChart'),{
     type:'bar', data:{labels:actDesign.map(e=>e.name), datasets:[
-      {label:'ออกแบบสื่อ',data:actDesign.map(e=>e.design),backgroundColor:'rgba(0,229,176,0.8)',borderRadius:4,stack:'d'},
-      {label:'ถ่ายภาพ',   data:actDesign.map(e=>e.photo), backgroundColor:'rgba(0,207,255,0.75)', borderRadius:4,stack:'d'},
-      {label:'ตัดต่อวิดีโอ',data:actDesign.map(e=>e.video),backgroundColor:'rgba(255,107,107,0.75)', borderRadius:4,stack:'d'},
-      {label:'โสตฯ',      data:actDesign.map(e=>e.soat), backgroundColor:'rgba(255,183,0,0.75)', borderRadius:4,stack:'d'},
+      {label:'ออกแบบสื่อ',data:actDesign.map(e=>e.design),backgroundColor:'rgba(124,158,245,0.75)',borderRadius:4,stack:'d'},
+      {label:'ถ่ายภาพ',   data:actDesign.map(e=>e.photo), backgroundColor:'rgba(86,204,178,0.75)', borderRadius:4,stack:'d'},
+      {label:'ตัดต่อวิดีโอ',data:actDesign.map(e=>e.video),backgroundColor:'rgba(246,135,179,0.75)', borderRadius:4,stack:'d'},
+      {label:'โสตฯ',      data:actDesign.map(e=>e.soat), backgroundColor:'rgba(246,173,85,0.75)', borderRadius:4,stack:'d'},
     ]},
-    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#7ab8a8'}}},
-      scales:{x:{stacked:true,grid:{color:'rgba(255,255,255,.02)'},ticks:{color:'#7ab8a8'}},
-              y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#2d5248'},beginAtZero:true}}}
+    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
+      scales:{x:{stacked:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
+              y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 
   // PR per person chart
@@ -627,11 +626,11 @@ function update() {
   if (prChartInst) prChartInst.destroy();
   prChartInst = new Chart(document.getElementById('prChart'),{
     type:'bar', data:{labels:actPr.map(e=>e.name), datasets:[
-      {label:'ประชาสัมพันธ์',data:actPr.map(e=>e.pr),backgroundColor:'rgba(167,139,250,0.75)',borderRadius:4},
+      {label:'ประชาสัมพันธ์',data:actPr.map(e=>e.pr),backgroundColor:'rgba(159,122,234,0.75)',borderRadius:4},
     ]},
-    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#7ab8a8'}}},
-      scales:{x:{grid:{color:'rgba(255,255,255,.02)'},ticks:{color:'#7ab8a8'}},
-              y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#2d5248'},beginAtZero:true}}}
+    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
+      scales:{x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
+              y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 }
 
@@ -676,7 +675,7 @@ function renderJobTable() {
   const rows = DB.rawRows.filter(r => {
     if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return false;
     if (typeFilter && !r.tags.includes(typeFilter)) return false;
-    if (empFilter  && !r.emps.includes(empFilter))  return false;
+    if (empFilter  && !r.emps.some(e=>e===empFilter)) return false;
     if (ownerFilter && r.owner !== ownerFilter)       return false;
     if (search && !r.jobDetail.toLowerCase().includes(search) &&
                   !r.jobId.toLowerCase().includes(search) &&
