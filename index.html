@@ -279,6 +279,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
           <th style="min-width:180px">เจ้าของงาน</th>
           <th style="min-width:120px">ประเภทงาน</th>
           <th style="min-width:120px;text-align:center">ผู้รับผิดชอบ</th>
+          <th style="min-width:140px;text-align:center">ผู้รับผิดชอบหลัก</th>
         </tr>
       </thead>
       <tbody id="jobTbody"></tbody>
@@ -425,6 +426,11 @@ function buildDB(csv){
     const designEmpsRaw=designEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
     const designEmps=[...new Set(designEmpsRaw)];
 
+    // ผู้รับผิดชอบหลัก (เฉพาะงาน design) จาก col 10=designVid, 11=photo, 12=video
+    const mainEmpCols=[COL.designVid,COL.photo,COL.video];
+    const mainEmpsRaw=mainEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
+    const mainEmps=[...new Set(mainEmpsRaw)];
+
     yearSet.add(year);monthSet.add(ym);
 
     rawRows.push({
@@ -433,7 +439,7 @@ function buildDB(csv){
       owner:clean(row[COL.owner]),
       assignDate:clean(row[COL.assignDate]),
       recvDate:clean(row[COL.receiveDate]),
-      tags,emps,designEmps,year,ym
+      tags,emps,designEmps,mainEmps,year,ym
     });
 
     const addEmp=(emp,field)=>{
@@ -706,6 +712,11 @@ function renderJobTable(){
       <td>${r.owner||'—'}</td>
       <td>${r.tags.filter(t=>t!=='pr').map(t=>`<span class="tag ${t}">${TAG_ICON[t]} ${TAG_LABEL[t]}</span>`).join(' ')}</td>
       <td style="text-align:center">${(r.designEmps&&r.designEmps.length?r.designEmps:['—']).join(', ')}</td>
+      <td style="text-align:center">${
+        r.tags.includes('design') && r.mainEmps && r.mainEmps.length
+          ? r.mainEmps.join(', ')
+          : '—'
+      }</td>
     </tr>`).join('');
 
   document.getElementById('jobPageNum').textContent=jobPage;
