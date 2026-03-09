@@ -615,6 +615,12 @@ function update(){
         empSel.value=''; div.style.background='';
       } else {
         rankDiv.querySelectorAll('.rb-row').forEach(r=>r.style.background='');
+        // เพิ่ม option ชั่วคราวถ้าชื่อยังไม่มีใน dropdown
+        if(![...empSel.options].some(o=>o.value===e.name)){
+          const tmp=document.createElement('option');
+          tmp.value=e.name; tmp.textContent=e.name;
+          empSel.appendChild(tmp);
+        }
         empSel.value=e.name; div.style.background='rgba(124,158,245,.1)';
       }
       jobCurrentPage=1; renderJobTable();
@@ -740,13 +746,16 @@ function rowInPeriod(r){
 
 function buildJobTable(){
   if(!DB) return;
-  // dropdown ผู้รับผิดชอบ — เฉพาะคนที่มีใน col 11,12,13 (designVid/photo/video)
-  const designDropSet=new Set();
-  DB.rawRows.forEach(r=>(r.mainEmps||[]).forEach(e=>designDropSet.add(e)));
+  // dropdown รวมทุก source: mainEmps (col10-13) + prMediaEmps (col23-28)
+  const allEmpDropSet=new Set();
+  DB.rawRows.forEach(r=>{
+    (r.mainEmps||[]).forEach(e=>allEmpDropSet.add(e));
+    Object.values(r.prMediaEmps||{}).forEach(e=>allEmpDropSet.add(e));
+  });
   const empSel=document.getElementById('jobEmpFilter');
   const prevEmp=empSel.value;
   empSel.innerHTML='<option value="">— ผู้รับผิดชอบ ทั้งหมด —</option>';
-  [...designDropSet].filter(e=>e&&e!=='ไม่ระบุ').sort().forEach(e=>{
+  [...allEmpDropSet].filter(e=>e&&e!=='ไม่ระบุ').sort().forEach(e=>{
     const o=document.createElement('option');o.value=e;o.textContent=e;empSel.appendChild(o);
   });
   empSel.value=prevEmp;
