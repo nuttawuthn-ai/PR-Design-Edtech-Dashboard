@@ -722,12 +722,12 @@ function update() {
 
   // PR per person chart — เฉพาะ 6 channels
   const PR_CHANNELS = [
-    { key:'fb',      label:'FB',           color:'rgba(59,130,246,0.8)' },
-    { key:'lineoa',  label:'Line OA',      color:'rgba(34,197,94,0.8)'  },
-    { key:'tiktok',  label:'TikTok',       color:'rgba(236,72,153,0.8)' },
-    { key:'ig',      label:'IG',           color:'rgba(251,146,60,0.8)' },
-    { key:'web',     label:'Web/TV (LED)', color:'rgba(99,102,241,0.8)' },
-    { key:'libteam', label:'Line Lib-Team',color:'rgba(20,184,166,0.8)' },
+    { key:'fb',      label:'FB',           color:'rgba(24,119,242,0.9)'  },  // Facebook #1877F2
+    { key:'lineoa',  label:'Line OA',      color:'rgba(0,185,0,0.9)'     },  // LINE #00B900
+    { key:'tiktok',  label:'TikTok',       color:'rgba(255,0,80,0.9)'    },  // TikTok #FF0050
+    { key:'ig',      label:'IG',           color:'rgba(193,53,132,0.9)'  },  // Instagram #C13584
+    { key:'web',     label:'Web/TV (LED)', color:'rgba(30,136,229,0.9)'  },  // Web blue #1E88E5
+    { key:'libteam', label:'Line Lib-Team',color:'rgba(0,167,157,0.9)'   },  // LINE teal variant
   ];
   // เฉพาะคนที่มีอย่างน้อย 1 channel
   const actPr = sorted.filter(e => PR_CHANNELS.some(ch => e[ch.key] > 0));
