@@ -450,14 +450,39 @@ function buildDB(csv){
       emp_month[emp][ym][field]++;
     };
 
-    emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>{
-      empAllSet.add(e);
-      if(isDesign) addEmp(e,'design');
-      if(isPhoto)  addEmp(e,'photo');
-      if(isVideo)  addEmp(e,'video');
-      if(isSoat)   addEmp(e,'soat');
-      if(isPr)     addEmp(e,'pr');
-    });
+    // ── นับแยกตาม column จริง (col 10=designVid, 11=photo, 12=video) ──
+    // design: ดึงชื่อจาก col 10 (ออกแบบสื่อ วิดีโอ/คลิปสั้น)
+    const empDesignVid=clean(row[COL.designVid]);
+    if(empDesignVid&&empDesignVid.length<=40){
+      empAllSet.add(empDesignVid);
+      addEmp(empDesignVid,'design');
+    }
+    // photo: ดึงชื่อจาก col 11 (ถ่ายภาพ)
+    const empPhoto=clean(row[COL.photo]);
+    if(empPhoto&&empPhoto.length<=40){
+      empAllSet.add(empPhoto);
+      addEmp(empPhoto,'photo');
+    }
+    // video: ดึงชื่อจาก col 12 (ตัดต่อวิดีโอ)
+    const empVideo=clean(row[COL.video]);
+    if(empVideo&&empVideo.length<=40){
+      empAllSet.add(empVideo);
+      addEmp(empVideo,'video');
+    }
+    // soat: col 13,14,15 — ใช้ emps จาก col 8 เหมือนเดิม (ไม่มี col เฉพาะ)
+    if(isSoat){
+      emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>{
+        empAllSet.add(e);
+        addEmp(e,'soat');
+      });
+    }
+    // pr: ใช้ emps จาก col 8
+    if(isPr){
+      emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>{
+        empAllSet.add(e);
+        addEmp(e,'pr');
+      });
+    }
 
     if(!monthly_totals[ym]) monthly_totals[ym]={design:0,photo:0,video:0,soat:0,pr:0};
     const mt=monthly_totals[ym];
@@ -640,14 +665,14 @@ function update(){
               y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 
-  const actDesign=sorted.filter(e=>e.designTotal>0);
+  // กราฟด้านออกแบบฯ: แสดงเฉพาะคนที่มี design/photo/video (col 10-12) เท่านั้น
+  const actDesign=sorted.filter(e=>(e.design+e.photo+e.video)>0);
   if(designChartInst) designChartInst.destroy();
   designChartInst=new Chart(document.getElementById('designChart'),{
     type:'bar',data:{labels:actDesign.map(e=>e.name),datasets:[
-      {label:'ออกแบบสื่อ',data:actDesign.map(e=>e.design),backgroundColor:'rgba(124,158,245,0.75)',borderRadius:4,stack:'d'},
-      {label:'ถ่ายภาพ',data:actDesign.map(e=>e.photo),backgroundColor:'rgba(86,204,178,0.75)',borderRadius:4,stack:'d'},
-      {label:'ตัดต่อวิดีโอ',data:actDesign.map(e=>e.video),backgroundColor:'rgba(246,135,179,0.75)',borderRadius:4,stack:'d'},
-      {label:'โสตฯ',data:actDesign.map(e=>e.soat),backgroundColor:'rgba(246,173,85,0.75)',borderRadius:4,stack:'d'},
+      {label:'ออกแบบสื่อ (วิดีโอ/คลิปสั้น)',data:actDesign.map(e=>e.design),backgroundColor:'rgba(124,158,245,0.85)',borderRadius:4,stack:'d'},
+      {label:'ถ่ายภาพ (ภาพนิ่ง/วิดีโอ)',   data:actDesign.map(e=>e.photo), backgroundColor:'rgba(86,204,178,0.85)', borderRadius:4,stack:'d'},
+      {label:'ตัดต่อวิดีโอ',                data:actDesign.map(e=>e.video), backgroundColor:'rgba(246,135,179,0.85)',borderRadius:4,stack:'d'},
     ]},
     options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
       scales:{x:{stacked:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
