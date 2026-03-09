@@ -430,6 +430,17 @@ function buildDB(csv){
     const mainEmpsRaw=mainEmpCols.map(c=>clean(row[c])).filter(v=>v.length>0&&v.length<=40);
     const mainEmps=[...new Set(mainEmpsRaw)];
 
+    // ผู้รับผิดชอบ PR แยกต่อ channel (col 22-27)
+    const prMediaCols={
+      fb:COL.pr7, lineoa:COL.pr8, tiktok:COL.pr9,
+      ig:COL.pr10, webtv:COL.pr11, lineteam:COL.pr12
+    };
+    const prMediaEmps={};
+    Object.entries(prMediaCols).forEach(([ch,c])=>{
+      const v=clean(row[c]);
+      if(v&&v.length>0&&v.length<=40) prMediaEmps[ch]=v;
+    });
+
     yearSet.add(year);monthSet.add(ym);
 
     rawRows.push({
@@ -438,7 +449,7 @@ function buildDB(csv){
       owner:clean(row[COL.owner]),
       assignDate:clean(row[COL.assignDate]),
       recvDate:clean(row[COL.receiveDate]),
-      tags,emps,designEmps,mainEmps,year,ym
+      tags,emps,designEmps,mainEmps,prMediaEmps,year,ym
     });
 
     const addEmp=(emp,field)=>{
@@ -476,13 +487,12 @@ function buildDB(csv){
         addEmp(e,'soat');
       });
     }
-    // pr: ใช้ emps จาก col 8
-    if(isPr){
-      emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>{
-        empAllSet.add(e);
-        addEmp(e,'pr');
-      });
-    }
+    // pr: นับจาก col 22-27 (FB, Line OA, TikTok, IG, Web/TV, Line Lib-Team)
+    const prEmpSet=new Set(Object.values(prMediaEmps).filter(v=>v&&v.length>0));
+    prEmpSet.forEach(e=>{
+      empAllSet.add(e);
+      addEmp(e,'pr');
+    });
 
     if(!monthly_totals[ym]) monthly_totals[ym]={design:0,photo:0,video:0,soat:0,pr:0};
     const mt=monthly_totals[ym];
@@ -679,15 +689,76 @@ function update(){
               y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
   });
 
-  const actPr=sorted.filter(e=>e.pr>0);
+  // กราฟด้านประชาสัมพันธ์: แสดงเฉพาะคนที่มีข้อมูลใน col 22-27
+  // นับต่อ channel
+  const PR_CHANNELS=[
+    {key:'fb',      label:'FB',           color:'rgba(66,103,178,0.82)'},
+    {key:'lineoa',  label:'Line OA',      color:'rgba(0,185,0,0.82)'},
+    {key:'tiktok',  label:'TikTok',       color:'rgba(0,0,0,0.75)'},
+    {key:'ig',      label:'IG',           color:'rgba(214,76,130,0.82)'},
+    {key:'webtv',   label:'Web/TV (LED)', color:'rgba(246,173,85,0.82)'},
+    {key:'lineteam',label:'Line Lib-Team',color:'rgba(86,204,178,0.82)'},
+  ];
+
+  // รวม pr ต่อคนต่อ channel จาก rawRows
+  const prEmpMap={};
+  DB.rawRows.forEach(r=>{
+    if(!rowInPeriod(r)) return;
+    if(!r.prMediaEmps) return;
+    Object.entries(r.prMediaEmps).forEach(([ch,emp])=>{
+      if(!emp||emp==='ไม่ระบุ') return;
+      if(!prEmpMap[emp]) prEmpMap[emp]={fb:0,lineoa:0,tiktok:0,ig:0,webtv:0,lineteam:0};
+      prEmpMap[emp][ch]=(prEmpMap[emp][ch]||0)+1;
+    });
+  });
+
+  const prNames=Object.keys(prEmpMap).sort((a,b)=>{
+    const ta=Object.values(prEmpMap[a]).reduce((s,v)=>s+v,0);
+    const tb=Object.values(prEmpMap[b]).reduce((s,v)=>s+v,0);
+    return tb-ta;
+  });
+
   if(prChartInst) prChartInst.destroy();
   prChartInst=new Chart(document.getElementById('prChart'),{
-    type:'bar',data:{labels:actPr.map(e=>e.name),datasets:[
-      {label:'ประชาสัมพันธ์',data:actPr.map(e=>e.pr),backgroundColor:'rgba(159,122,234,0.75)',borderRadius:4},
-    ]},
-    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
-      scales:{x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
-              y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
+    type:'bar',
+    data:{
+      labels:prNames,
+      datasets:PR_CHANNELS.map(ch=>({
+        label:ch.label,
+        data:prNames.map(n=>prEmpMap[n][ch.key]||0),
+        backgroundColor:ch.color,
+        borderRadius:3,
+        stack:'pr'
+      }))
+    },
+    options:{
+      responsive:true,
+      onClick:(evt,elements)=>{
+        if(!elements.length) return;
+        const idx=elements[0].index;
+        const empName=prNames[idx];
+        const empSel=document.getElementById('jobEmpFilter');
+        if(empSel.value===empName){ empSel.value=''; }
+        else { empSel.value=empName; }
+        jobCurrentPage=1;
+        renderJobTable();
+        document.querySelector('.sl:last-of-type')?.scrollIntoView({behavior:'smooth',block:'start'});
+      },
+      plugins:{
+        legend:{labels:{font:{size:10},padding:8,color:'#718096'}},
+        tooltip:{callbacks:{
+          title:items=>`👤 ${items[0].label}`,
+          footer:items=>{
+            const total=items.reduce((s,i)=>s+i.raw,0);
+            return `รวม: ${total} งาน`;
+          }
+        }}
+      },
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
+        y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}
+      }
+    }
   });
 }
 
