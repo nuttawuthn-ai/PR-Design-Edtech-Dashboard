@@ -278,7 +278,6 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
           <th style="min-width:110px">วันที่รับงาน</th>
           <th style="min-width:180px">เจ้าของงาน</th>
           <th style="min-width:120px">ประเภทงาน</th>
-          <th style="min-width:120px;text-align:center">ผู้รับผิดชอบ</th>
           <th style="min-width:140px;text-align:center">ผู้รับผิดชอบหลัก</th>
         </tr>
       </thead>
@@ -554,25 +553,66 @@ function update(){
   const pLabel=state.period==='ทั้งหมด'?(state.periodType==='year'?'ทุกปี':'ทุกเดือน'):state.period;
   document.getElementById('chartPeriodLabel').textContent=pLabel;
 
-  // Rank bars
+  // Rank bars — เต็มช่อง + คลิกกรองตาราง + legend
   const sorted=[...empData].sort((a,b)=>(b.designTotal+b.pr)-(a.designTotal+a.pr));
   const rankDiv=document.getElementById('rankBars');
-  rankDiv.innerHTML='';
+
+  // Legend
+  const legendHTML=`
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(0,0,0,.06)">
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#555">
+        <div style="width:14px;height:10px;border-radius:3px;background:linear-gradient(90deg,#7c9ef5,#56ccb2)"></div> ด้านออกแบบฯ
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#555">
+        <div style="width:14px;height:10px;border-radius:3px;background:linear-gradient(90deg,#9f7aea,#f687b3)"></div> ประชาสัมพันธ์
+      </div>
+      <div style="margin-left:auto;font-size:10px;color:#a0aec0;font-style:italic">คลิกชื่อเพื่อกรองตาราง</div>
+    </div>`;
+  rankDiv.innerHTML=legendHTML;
+
   const maxVal=Math.max(...sorted.map(e=>e.designTotal+e.pr),1);
   sorted.forEach(e=>{
     const total=e.designTotal+e.pr;
     if(total===0) return;
-    const dPct=(e.designTotal/maxVal*100).toFixed(1);
-    const pPct=(e.pr/maxVal*100).toFixed(1);
+    // คำนวณ % เทียบกับ maxVal แต่ track จริงใช้ % ของ total ในแต่ละ bar
+    const barWidthPct=(total/maxVal*100).toFixed(1);
+    const dSharePct=(e.designTotal/total*100).toFixed(1);
+    const pSharePct=(e.pr/total*100).toFixed(1);
     const div=document.createElement('div');
     div.className='rb-row';
+    div.style.cssText='cursor:pointer;border-radius:6px;padding:3px 4px;transition:background .15s;';
+    div.title=`คลิกเพื่อกรองตาราง: ${e.name}`;
     div.innerHTML=`
-      <div class="rb-name">${e.name}</div>
-      <div class="rb-track">
-        ${e.designTotal>0?`<div class="rb-seg" style="width:${dPct}%;background:linear-gradient(90deg,#7c9ef5,#56ccb2)"><span style="color:#fff;font-size:9px;padding:0 3px">${e.designTotal}</span></div>`:''}
-        ${e.pr>0?`<div class="rb-seg" style="width:${pPct}%;background:linear-gradient(90deg,#9f7aea,#f687b3)"><span style="color:#000;font-size:9px;padding:0 3px">${e.pr}</span></div>`:''}
+      <div class="rb-name" style="width:90px;font-size:11px">${e.name}</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+        <div style="height:20px;background:rgba(0,0,0,.04);border-radius:4px;overflow:hidden;display:flex">
+          <div style="width:${barWidthPct}%;display:flex;border-radius:4px;overflow:hidden">
+            ${e.designTotal>0?`<div style="width:${dSharePct}%;height:100%;background:linear-gradient(90deg,#7c9ef5,#56ccb2);display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:9px;font-weight:700;padding:0 4px;white-space:nowrap">${e.designTotal}</span></div>`:''}
+            ${e.pr>0?`<div style="width:${pSharePct}%;height:100%;background:linear-gradient(90deg,#9f7aea,#f687b3);display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:9px;font-weight:700;padding:0 4px;white-space:nowrap">${e.pr}</span></div>`:''}
+          </div>
+        </div>
       </div>
-      <div class="rb-total">${total}</div>`;
+      <div style="font-size:11px;font-weight:700;color:#4a5568;width:28px;text-align:right;flex-shrink:0">${total}</div>`;
+    // คลิก → กรองตาราง + scroll
+    div.addEventListener('click',()=>{
+      const empSel=document.getElementById('jobEmpFilter');
+      // toggle: ถ้าเลือกคนนี้อยู่แล้วให้ reset
+      if(empSel.value===e.name){
+        empSel.value='';
+        div.style.background='';
+      } else {
+        // reset highlight ทั้งหมด
+        rankDiv.querySelectorAll('.rb-row').forEach(r=>r.style.background='');
+        empSel.value=e.name;
+        div.style.background='rgba(124,158,245,.1)';
+      }
+      jobCurrentPage=1;
+      renderJobTable();
+      // scroll ไปที่ตาราง
+      document.querySelector('.sl:last-of-type')?.scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    div.addEventListener('mouseenter',()=>{ if(document.getElementById('jobEmpFilter').value!==e.name) div.style.background='rgba(0,0,0,.03)'; });
+    div.addEventListener('mouseleave',()=>{ if(document.getElementById('jobEmpFilter').value!==e.name) div.style.background=''; });
     rankDiv.appendChild(div);
   });
 
@@ -711,7 +751,6 @@ function renderJobTable(){
       <td style="white-space:nowrap">${r.recvDate||'—'}</td>
       <td>${r.owner||'—'}</td>
       <td>${r.tags.filter(t=>t!=='pr').map(t=>`<span class="tag ${t}">${TAG_ICON[t]} ${TAG_LABEL[t]}</span>`).join(' ')}</td>
-      <td style="text-align:center">${(r.designEmps&&r.designEmps.length?r.designEmps:['—']).join(', ')}</td>
       <td style="text-align:center">${
         r.tags.includes('design') && r.mainEmps && r.mainEmps.length
           ? r.mainEmps.join(', ')
