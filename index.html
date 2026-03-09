@@ -881,7 +881,7 @@ function renderJobTable(){
       <td>${r.owner||'—'}</td>
       <td>${r.tags.filter(t=>t!=='pr').map(t=>`<span class="tag ${t}">${TAG_ICON[t]} ${TAG_LABEL[t]}</span>`).join(' ')}</td>
       <td style="text-align:center">${
-        r.tags.includes('design') && r.mainEmps && r.mainEmps.length
+        r.tags.some(t=>['design','photo','video'].includes(t)) && r.mainEmps && r.mainEmps.length
           ? r.mainEmps.join(', ')
           : '—'
       }</td>
