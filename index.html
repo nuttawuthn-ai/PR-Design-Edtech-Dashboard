@@ -369,6 +369,10 @@ function revealCharts(){
 // CSV PARSER
 // ============================================================
 function parseCSVLine(line){
+  // ตรวจ separator: ถ้าไม่มี comma เลยหรือมี tab → ใช้ tab
+  const useTab = line.includes('\t') && (line.split('\t').length > line.split(',').length);
+  if(useTab) return line.split('\t').map(v=>v.replace(/^"|"$/g,'').trim());
+  // CSV comma mode (with quote handling)
   const result=[];let cur='',inQ=false;
   for(let i=0;i<line.length;i++){
     const ch=line[i];
