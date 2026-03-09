@@ -246,12 +246,13 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
     <table class="job-table" id="jobTable" style="width:100%">
       <thead>
         <tr>
+          <th style="min-width:40px;text-align:center">#</th>
           <th style="min-width:200px">ชื่องาน / รหัส</th>
           <th style="min-width:110px">วันที่มอบหมาย</th>
           <th style="min-width:110px">วันที่รับงาน</th>
           <th style="min-width:180px">เจ้าของงาน</th>
           <th style="min-width:120px">ประเภทงาน</th>
-          <th style="min-width:120px;text-align:center">ผู้รับผิดชอบ</th>
+          <th style="min-width:140px">ผู้รับผิดชอบหลัก</th>
         </tr>
       </thead>
       <tbody id="jobTbody"></tbody>
@@ -399,18 +400,26 @@ function buildDB(csv) {
     }
     if (!year || !ym) continue;
 
-    // ฟังก์ชัน: cell มีค่า = task นั้นถูกมอบหมาย (ชื่อสั้น ≤ 40 ตัว)
-    const taskFilled = (v) => { const s = clean(v); return s.length > 0 && s.length <= 40; };
-    const isDesign = taskFilled(row[COL.design]) || taskFilled(row[COL.designVid]);
-    const isPhoto  = taskFilled(row[COL.photo]);
-    const isVideo  = taskFilled(row[COL.video]);
-    const isSoat   = taskFilled(row[COL.soat1]) || taskFilled(row[COL.soat2]) || taskFilled(row[COL.soat3]);
-    const prCols   = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,
-                      COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
-    const isPr     = prCols.some(c => taskFilled(row[c]));
+    // cell มีชื่อคน = task ถูกมอบหมาย (ชื่อสั้น 2-30 ตัว)
+    const getName = (v) => { const s = clean(v); return (s.length>=2 && s.length<=30) ? s : ''; };
+    const splitNames = (v) => clean(v).split(',').map(e=>e.trim()).filter(e=>e.length>=2 && e.length<=30);
 
-    // designEmps/photoEmps ฯลฯ ไม่ได้ใช้แยกต่อ — ใช้ col 8 แทน
-    const designEmps=[], photoEmps=[], videoEmps=[], soatEmps=[], prEmps=[];
+    // task columns → ชื่อผู้รับผิดชอบหลักของแต่ละ task
+    const designEmp  = getName(row[10]);   // ออกแบบสื่อ (ภาพนิ่ง)
+    const designVEmp = getName(row[11]);   // ออกแบบสื่อ (วิดีโอ)
+    const photoEmp   = getName(row[12]);   // ถ่ายภาพ
+    const videoEmp   = getName(row[13]);   // ตัดต่อวิดีโอ
+    const soat1Emp   = getName(row[14]);   // ติดตั้งโสตฯ
+    const soat2Emp   = getName(row[15]);   // ผลิตรายการ
+    const soat3Emp   = getName(row[16]);   // อื่นๆ โสตฯ
+    const prCols     = [17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+    const prEmpList  = prCols.map(c=>getName(row[c])).filter(Boolean);
+
+    const isDesign = !!(designEmp || designVEmp);
+    const isPhoto  = !!photoEmp;
+    const isVideo  = !!videoEmp;
+    const isSoat   = !!(soat1Emp || soat2Emp || soat3Emp);
+    const isPr     = prEmpList.length > 0;
 
     // หา tags
     const tags = [];
@@ -420,17 +429,26 @@ function buildDB(csv) {
     if (isSoat)   tags.push('soat');
     if (isPr)     tags.push('pr');
 
-    // emps มาจาก col 8 (ผู้รับมอบหมาย) split comma เท่านั้น
+    // taskEmps: แมป tag → ผู้รับผิดชอบหลัก
+    const taskEmps = {
+      design: [designEmp, designVEmp].filter(Boolean),
+      photo:  photoEmp ? [photoEmp] : [],
+      video:  videoEmp ? [videoEmp] : [],
+      soat:   [soat1Emp, soat2Emp, soat3Emp].filter(Boolean),
+      pr:     prEmpList
+    };
+
+    // emps รวม = ทุกคนที่มีส่วนร่วมในงานนี้ (unique)
     const empRaw = clean(row[COL.empDesign]);
     const emps = empRaw
-      ? empRaw.split(',').map(e=>e.trim()).filter(e=>e.length>1 && e.length<=30)
-      : [];
+      ? splitNames(empRaw)
+      : [...new Set([...taskEmps.design,...taskEmps.photo,...taskEmps.video,...taskEmps.soat,...taskEmps.pr])];
     if (!emps.length) emps.push('ไม่ระบุ');
 
     yearSet.add(year); monthSet.add(ym);
 
     // store raw
-    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, emps, year, ym });
+    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, emps, taskEmps, year, ym });
 
     // aggregate per employee — นับเฉพาะ task ที่ตัวเองทำ
     const addEmp = (emp, field) => {
@@ -441,17 +459,16 @@ function buildDB(csv) {
       if (!emp_month[emp][ym]) emp_month[emp][ym] = {design:0,photo:0,video:0,soat:0,pr:0};
       emp_month[emp][ym][field]++;
     };
-    // นับงานต่อ emp โดยดูจาก tags ของงานนั้น
-    emps.filter(e=>e!=='ไม่ระบุ').forEach(e => {
-      empAllSet.add(e);
-      if (isDesign||isPhoto||isVideo||isSoat) empDesignSet.add(e);
-      if (isPr) empPrSet.add(e);
-      if (isDesign) addEmp(e,'design');
-      if (isPhoto)  addEmp(e,'photo');
-      if (isVideo)  addEmp(e,'video');
-      if (isSoat)   addEmp(e,'soat');
-      if (isPr)     addEmp(e,'pr');
+    // นับงานต่อ emp แยกตาม task จริง
+    Object.entries(taskEmps).forEach(([field, empList]) => {
+      empList.forEach(e => {
+        empAllSet.add(e);
+        if (field !== 'pr') empDesignSet.add(e); else empPrSet.add(e);
+        addEmp(e, field);
+      });
     });
+    // เพิ่ม emps ที่ไม่ได้อยู่ใน taskEmps เข้า empAllSet ด้วย
+    emps.filter(e=>e!=='ไม่ระบุ').forEach(e=>empAllSet.add(e));
 
     // monthly totals
     if (!monthly_totals[ym]) monthly_totals[ym] = { design:0, photo:0, video:0, soat:0, pr:0 };
@@ -667,7 +684,10 @@ function renderJobTable() {
   const rows = DB.rawRows.filter(r => {
     if (!tblKeys.includes(r.ym) && !tblKeys.some(k => r.ym.startsWith(k))) return false;
     if (typeFilter && !r.tags.includes(typeFilter)) return false;
-    if (empFilter  && !r.emps.some(e=>e===empFilter)) return false;
+    if (empFilter) {
+      const allEmpsInRow = [...r.emps, ...Object.values(r.taskEmps||{}).flat()];
+      if (!allEmpsInRow.some(e=>e===empFilter)) return false;
+    }
     if (ownerFilter && r.owner !== ownerFilter)       return false;
     if (search && !r.jobDetail.toLowerCase().includes(search) &&
                   !r.jobId.toLowerCase().includes(search) &&
@@ -689,15 +709,23 @@ function renderJobTable() {
   const pageRows   = rows.slice((jobPage-1)*PAGE_SIZE, jobPage*PAGE_SIZE);
 
   const tbody = document.getElementById('jobTbody');
-  tbody.innerHTML = pageRows.map(r => `
-    <tr>
+  const startNo = (jobPage-1)*PAGE_SIZE + 1;
+  tbody.innerHTML = pageRows.map((r, idx) => {
+    // ผู้รับผิดชอบหลัก = รวมชื่อจาก taskEmps ของ tags ที่แสดงอยู่ (unique)
+    const mainEmps = [...new Set(
+      r.tags.flatMap(t => (r.taskEmps && r.taskEmps[t]) ? r.taskEmps[t] : [])
+    )].filter(Boolean);
+    const mainEmpStr = mainEmps.length ? mainEmps.join(', ') : r.emps.filter(e=>e!=='ไม่ระบุ').join(', ') || '—';
+    return `<tr>
+      <td style="text-align:center;color:var(--t3);font-size:11px">${startNo+idx}</td>
       <td>${r.jobDetail || r.jobId || '—'}</td>
       <td style="white-space:nowrap">${r.assignDate||'—'}</td>
       <td style="white-space:nowrap">${r.recvDate||'—'}</td>
       <td>${r.owner||'—'}</td>
       <td>${r.tags.map(t=>`<span class="tag ${t}">${TAG_ICON[t]} ${TAG_LABEL[t]}</span>`).join(' ')}</td>
-      <td style="text-align:center">${r.emps.join(', ')}</td>
-    </tr>`).join('');
+      <td>${mainEmpStr}</td>
+    </tr>`;
+  }).join('');
 
   document.getElementById('jobPageNum').textContent = jobPage;
   document.getElementById('jobPagePrev').disabled  = jobPage <= 1;
