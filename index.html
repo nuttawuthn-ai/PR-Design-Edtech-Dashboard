@@ -194,7 +194,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 
 <div id="mainContent" style="display:none">
 
-<div class="sl">แนวโน้มตามเวลา & สัดส่วนรายบุคคล</div>
+<div class="sl">แนวโน้มตามเวลา & เจ้าของงาน</div>
 <div class="g3" style="margin-bottom:16px">
   <div class="card">
     <div class="ch">
@@ -208,6 +208,13 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
       <div class="ct"><span class="ico">🏅</span> จำนวนงานตามเจ้าของ</div>
     </div>
     <div id="rankBars" class="rank-bars" style="flex:1"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:6px">
+      <div id="rankPageInfo" style="font-size:11px;color:var(--t2)"></div>
+      <div style="display:flex;gap:6px">
+        <button id="rankPrev" onclick="rankChangePage(-1)" style="background:var(--card2);color:var(--t1);border:1px solid var(--border);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px">◀</button>
+        <button id="rankNext" onclick="rankChangePage(1)"  style="background:var(--card2);color:var(--t1);border:1px solid var(--border);border-radius:6px;padding:2px 10px;cursor:pointer;font-size:12px">▶</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -282,25 +289,26 @@ const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwYuaqHkHAgHD5jDJXga
 const COL = {
   timestamp: 0, jobId: 1, jobType: 2, content: 3,
   assignDate: 4, receiveDate: 5, owner: 6, dept: 7,
-  empDesign: 8,   // ผู้รับมอบหมาย (ออกแบบ/ประชาสัมพันธ์)
-  design: 9,      // ออกแบบสื่อ (ภาพนิ่ง)  ← col 9 จริงๆ
-  designVid: 10,  // ออกแบบสื่อ (วิดีโอ)
-  photo: 11,      // ถ่ายภาพ
-  video: 12,      // ตัดต่อวิดีโอ
-  soat1: 13,      // ติดตั้งโสตฯ
-  soat2: 14,      // ผลิตรายการ
-  soat3: 15,      // อื่นๆ โสตฯ
-  pr1: 16,        // เขียนข่าวไทย
-  pr2: 17,        // เขียนข่าวอังกฤษ
-  pr3: 18,        // พิสูจน์อักษร
-  pr4: 19,        // ต้อนรับต่างชาติ
-  pr5: 20,        // ต้อนรับไทย
-  pr6: 21,        // พิธีกร
-  pr7: 22,        // FB
-  pr8: 23,        // Line OA
-  pr9: 24,        // TikTok
-  pr10: 25,       // IG
-  pr11: 26,       // Web/TV
+  empDesign: 8,   // ผู้รับมอบหมาย
+  jobDetail2: 9,  // รายละเอียดงาน
+  design: 10,     // ออกแบบสื่อ (ภาพนิ่ง)
+  designVid: 11,  // ออกแบบสื่อ (วิดีโอ/คลิปสั้น)
+  photo: 12,      // ถ่ายภาพ (ภาพนิ่ง/วิดีโอ)
+  video: 13,      // ตัดต่อวิดีโอ
+  soat1: 14,      // ติดตั้งและควบคุมอุปกรณ์โสตฯ
+  soat2: 15,      // ผลิตรายการ/สื่อโสตฯ
+  soat3: 16,      // อื่นๆ (โสตฯ)
+  pr1: 17,        // เขียนข่าวไทย
+  pr2: 18,        // เขียนข่าวอังกฤษ
+  pr3: 19,        // พิสูจน์อักษร
+  pr4: 20,        // ต้อนรับต่างชาติ
+  pr5: 21,        // ต้อนรับไทย
+  pr6: 22,        // พิธีกร
+  pr7: 23,        // FB
+  pr8: 24,        // Line OA
+  pr9: 25,        // TikTok
+  pr10: 26,       // IG
+  pr11: 27,       // Web/TV
   pr12: 27,       // Line Lib-Team
   pr13: 28,       // ประสานงาน
   pr14: 29,       // อื่นๆ ประชาสัมพันธ์
@@ -310,6 +318,7 @@ const COL = {
 let DB = null;
 let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true };
 let jobCurrentPage = 1;
+let rankCurrentPage = 1;
 let timelineChartInst = null, designChartInst = null, prChartInst = null;
 
 Chart.defaults.font.family = "'Sarabun', sans-serif";
@@ -409,14 +418,14 @@ function buildDB(csv) {
     const splitNames = (v) => clean(v).split(',').map(e=>e.trim()).filter(e=>e.length>=2 && e.length<=30);
 
     // task columns → ชื่อผู้รับผิดชอบหลักของแต่ละ task
-    const designEmp  = getName(row[10]);   // ออกแบบสื่อ (ภาพนิ่ง)
-    const designVEmp = getName(row[11]);   // ออกแบบสื่อ (วิดีโอ)
-    const photoEmp   = getName(row[12]);   // ถ่ายภาพ
-    const videoEmp   = getName(row[13]);   // ตัดต่อวิดีโอ
-    const soat1Emp   = getName(row[14]);   // ติดตั้งโสตฯ
-    const soat2Emp   = getName(row[15]);   // ผลิตรายการ
-    const soat3Emp   = getName(row[16]);   // อื่นๆ โสตฯ
-    const prCols     = [17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+    const designEmp  = getName(row[COL.design]);    // ออกแบบสื่อ (ภาพนิ่ง)
+    const designVEmp = getName(row[COL.designVid]);  // ออกแบบสื่อ (วิดีโอ)
+    const photoEmp   = getName(row[COL.photo]);      // ถ่ายภาพ
+    const videoEmp   = getName(row[COL.video]);      // ตัดต่อวิดีโอ
+    const soat1Emp   = getName(row[COL.soat1]);   // ติดตั้งโสตฯ
+    const soat2Emp   = getName(row[COL.soat2]);   // ผลิตรายการ
+    const soat3Emp   = getName(row[COL.soat3]);   // อื่นๆ โสตฯ
+    const prCols     = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
     const prEmpList  = prCols.map(c=>getName(row[c])).filter(Boolean);
 
     const isDesign = !!(designEmp || designVEmp);
@@ -465,9 +474,9 @@ function buildDB(csv) {
     // store raw
     // เก็บ soat sub-cols ไว้ filter แยกได้
     const soatCols = [
-      clean(row[14]),  // ติดตั้งโสตฯ
-      clean(row[15]),  // ผลิตรายการ
-      clean(row[16]),  // อื่นๆ โสตฯ
+      clean(row[COL.soat1]),  // ติดตั้งโสตฯ
+      clean(row[COL.soat2]),  // ผลิตรายการ
+      clean(row[COL.soat3]),  // อื่นๆ โสตฯ
     ];
     rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, subTags, emps, taskEmps, soatCols, year, ym });
 
@@ -605,10 +614,15 @@ function update() {
     ownerCount[r.owner] = (ownerCount[r.owner]||0) + 1;
   });
   const ownerSorted = Object.entries(ownerCount).sort((a,b)=>b[1]-a[1]);
+  const RANK_PAGE_SIZE = 10;
+  const rankTotalPages = Math.max(1, Math.ceil(ownerSorted.length / RANK_PAGE_SIZE));
+  rankCurrentPage = Math.min(rankCurrentPage, rankTotalPages);
+  const rankPage = ownerSorted.slice((rankCurrentPage-1)*RANK_PAGE_SIZE, rankCurrentPage*RANK_PAGE_SIZE);
+
   const rankDiv = document.getElementById('rankBars');
   rankDiv.innerHTML = '';
-  const maxOwner = Math.max(...ownerSorted.map(o=>o[1]), 1);
-  ownerSorted.forEach(([name, cnt]) => {
+  const maxOwner = Math.max(...rankPage.map(o=>o[1]), 1);
+  rankPage.forEach(([name, cnt]) => {
     const pct = (cnt/maxOwner*100).toFixed(1);
     const div = document.createElement('div');
     div.className = 'rb-row';
@@ -622,6 +636,12 @@ function update() {
       <div class="rb-total">${cnt}</div>`;
     rankDiv.appendChild(div);
   });
+  const rankInfo = document.getElementById('rankPageInfo');
+  if (rankInfo) rankInfo.textContent = `หน้า ${rankCurrentPage}/${rankTotalPages} · ${ownerSorted.length} เจ้าของงาน`;
+  const rPrev = document.getElementById('rankPrev');
+  const rNext = document.getElementById('rankNext');
+  if (rPrev) rPrev.disabled = rankCurrentPage <= 1;
+  if (rNext) rNext.disabled = rankCurrentPage >= rankTotalPages;
 
   // Timeline chart
   const tlKeys = state.periodType === 'year'
@@ -791,6 +811,10 @@ function renderJobTable() {
 function jobChangePage(dir) {
   jobCurrentPage = Math.max(1, jobCurrentPage + dir);
   renderJobTable();
+}
+function rankChangePage(dir) {
+  rankCurrentPage = Math.max(1, rankCurrentPage + dir);
+  update();
 }
 
 // ============================================================
