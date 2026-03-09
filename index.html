@@ -75,7 +75,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .divider{width:1px;height:32px;background:rgba(0,0,0,.1);flex-shrink:0}
 
 /* KPI */
-.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
 .kpi{background:#ffffff;border:none;border-radius:16px;padding:18px 16px;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.07)}
 .kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
 .kpi.k1::after{background:linear-gradient(90deg,#7c9ef5,#a3bffa)}
@@ -83,6 +83,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .kpi.k2::after{background:linear-gradient(90deg,#f687b3,#fbb6ce)}
 .kpi.k-soat::after{background:linear-gradient(90deg,#f6ad55,#fbd38d)}
 .kpi.k-pr::after{background:linear-gradient(90deg,#9f7aea,#b794f4)}
+.kpi.k-total::after{background:linear-gradient(90deg,#4a5568,#718096)}
 .kpi-ico{font-size:22px;margin-bottom:8px}
 .kpi-n{font-size:32px;font-weight:800;line-height:1}
 .kpi.k1 .kpi-n{color:#4c6ef5}
@@ -90,6 +91,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .kpi.k2 .kpi-n{color:#d6336c}
 .kpi.k-soat .kpi-n{color:#dd6b20}
 .kpi.k-pr .kpi-n{color:#6b46c1}
+.kpi.k-total .kpi-n{color:#2d3748}
 .kpi-l{font-size:11px;color:var(--t2);margin-top:4px;font-weight:500}
 
 /* Skeleton KPI */
@@ -106,7 +108,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 .g3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
 .sl{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#a0aec0;margin-bottom:12px;margin-top:4px;display:flex;align-items:center;gap:10px}
 .sl::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.08)}
-@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.g2,.g3{grid-template-columns:1fr}}
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(3,1fr)}.g2,.g3{grid-template-columns:1fr}}
 @media(max-width:600px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
 
 /* Table */
@@ -202,6 +204,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   <div class="kpi k2">   <div class="kpi-ico">🎬</div><div class="kpi-n" id="k-video"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ตัดต่อวิดีโอ</div></div>
   <div class="kpi k-soat"><div class="kpi-ico">🔊</div><div class="kpi-n" id="k-soat"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">โสตฯ/อื่นๆ</div></div>
   <div class="kpi k-pr"> <div class="kpi-ico">📣</div><div class="kpi-n" id="k-pr"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">ประชาสัมพันธ์</div></div>
+  <div class="kpi k-total"><div class="kpi-ico">📊</div><div class="kpi-n" id="k-total"><div class="skel kpi-skel-n"></div></div><div class="kpi-l">งานทั้งหมด</div></div>
 </div>
 
 <div id="mainContent">
@@ -526,6 +529,7 @@ function update(){
   setNum('k-video',tVideo);
   setNum('k-soat',tSoat);
   setNum('k-pr',tPr);
+  setNum('k-total', tDesign+tPhoto+tVideo+tSoat+tPr);
 
   const pLabel=state.period==='ทั้งหมด'?(state.periodType==='year'?'ทุกปี':'ทุกเดือน'):state.period;
   document.getElementById('chartPeriodLabel').textContent=pLabel;
