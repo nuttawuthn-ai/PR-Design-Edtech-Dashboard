@@ -524,12 +524,19 @@ function update(){
     if(state.showPr&&r.tags.includes('pr'))         tPr++;
   });
 
+  // นับ unique งาน (1 งานมีหลาย tag แต่นับครั้งเดียว)
+  let tTotal=0;
+  DB.rawRows.forEach(r=>{
+    if(!rowInPeriod(r)) return;
+    tTotal++;
+  });
+
   setNum('k-design',tDesign);
   setNum('k-photo',tPhoto);
   setNum('k-video',tVideo);
   setNum('k-soat',tSoat);
   setNum('k-pr',tPr);
-  setNum('k-total', tDesign+tPhoto+tVideo+tSoat+tPr);
+  setNum('k-total',tTotal);
 
   const pLabel=state.period==='ทั้งหมด'?(state.periodType==='year'?'ทุกปี':'ทุกเดือน'):state.period;
   document.getElementById('chartPeriodLabel').textContent=pLabel;
