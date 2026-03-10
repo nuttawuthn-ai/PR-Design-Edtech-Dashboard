@@ -207,7 +207,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
   <div class="card" style="display:flex;flex-direction:column;min-height:320px">
     <div class="ch">
-      <div class="ct"><span class="ico">🏅</span> จำนวนงานตามเจ้าของ</div>
+      <div class="ct"><span class="ico">🏅</span> เจ้าของงาน</div>
     </div>
     <div id="rankBars" class="rank-bars" style="flex:1;overflow:hidden"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:6px">
@@ -216,6 +216,10 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
       <div id="ownerBadge" style="display:none;align-items:center;gap:4px;background:rgba(0,229,176,.12);border:1px solid rgba(0,229,176,.3);border-radius:20px;padding:2px 10px;font-size:11px;color:#00e5b0;font-weight:600">
         <span id="ownerBadgeText"></span>
         <span onclick="clearOwnerFilter()" style="cursor:pointer;margin-left:4px;opacity:.7">✕</span>
+      </div>
+      <div id="empBadge" style="display:none;align-items:center;gap:4px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:20px;padding:2px 10px;font-size:11px;color:#a78bfa;font-weight:600">
+        <span id="empBadgeText"></span>
+        <span onclick="clearEmpFilter()" style="cursor:pointer;margin-left:4px;opacity:.7">✕</span>
       </div>
     </div>
       <div style="display:flex;gap:6px">
@@ -324,7 +328,7 @@ const COL = {
 };
 
 let DB = null;
-let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true, selectedOwner: '' };
+let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true, selectedOwner: '', selectedEmp: '' };
 let jobCurrentPage = 1;
 let rankCurrentPage = 1;
 let timelineChartInst = null, designChartInst = null, prChartInst = null;
@@ -579,6 +583,7 @@ function getEmpData(emp) {
   DB.rawRows.forEach(r => {
     if (!empKeys.includes(r.ym) && !empKeys.some(k => r.ym.startsWith(k))) return;
     if (state.selectedOwner && r.owner !== state.selectedOwner) return;
+    if (state.selectedEmp && emp !== state.selectedEmp) return;
     // design/photo/video/soat — นับจาก taskEmps ของแต่ละ emp
     const te = r.taskEmps || {};
     if ((te.design||[]).includes(emp)) d++;
@@ -708,16 +713,30 @@ function update() {
   // Design per person chart
   const actDesign = sorted.filter(e=>e.designTotal>0);
   if (designChartInst) designChartInst.destroy();
+  const mkDesignColor = (base, names) => names.map(n =>
+    state.selectedEmp && state.selectedEmp !== n ? base.replace(/[\d.]+\)$/, '0.2)') : base
+  );
   designChartInst = new Chart(document.getElementById('designChart'),{
     type:'bar', data:{labels:actDesign.map(e=>e.name), datasets:[
-      {label:'ออกแบบสื่อ',data:actDesign.map(e=>e.design),backgroundColor:'rgba(124,158,245,0.75)',borderRadius:4,stack:'d'},
-      {label:'ถ่ายภาพ',   data:actDesign.map(e=>e.photo), backgroundColor:'rgba(86,204,178,0.75)', borderRadius:4,stack:'d'},
-      {label:'ตัดต่อวิดีโอ',data:actDesign.map(e=>e.video),backgroundColor:'rgba(246,135,179,0.75)', borderRadius:4,stack:'d'},
-      {label:'โสตฯ',      data:actDesign.map(e=>e.soat), backgroundColor:'rgba(246,173,85,0.75)', borderRadius:4,stack:'d'},
+      {label:'ออกแบบสื่อ',data:actDesign.map(e=>e.design),backgroundColor:mkDesignColor('rgba(124,158,245,0.85)',actDesign.map(e=>e.name)),borderRadius:4,stack:'d'},
+      {label:'ถ่ายภาพ',   data:actDesign.map(e=>e.photo), backgroundColor:mkDesignColor('rgba(86,204,178,0.85)',actDesign.map(e=>e.name)), borderRadius:4,stack:'d'},
+      {label:'ตัดต่อวิดีโอ',data:actDesign.map(e=>e.video),backgroundColor:mkDesignColor('rgba(246,135,179,0.85)',actDesign.map(e=>e.name)),borderRadius:4,stack:'d'},
+      {label:'โสตฯ',      data:actDesign.map(e=>e.soat), backgroundColor:mkDesignColor('rgba(246,173,85,0.85)',actDesign.map(e=>e.name)), borderRadius:4,stack:'d'},
     ]},
-    options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:8,color:'#718096'}}},
-      scales:{x:{stacked:true,grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#718096'}},
-              y:{stacked:true,grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#a0aec0'},beginAtZero:true}}}
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{font:{size:10},padding:8,color:'#a0aec0'}}},
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0'}},
+        y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0'},beginAtZero:true}
+      },
+      onClick(evt) {
+        const pts = designChartInst.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+        if (!pts.length) return;
+        const name = actDesign[pts[0].index]?.name;
+        if (name) toggleEmpFilter(name);
+      }
+    }
   });
 
   // PR per person chart — เฉพาะ 6 channels
@@ -752,7 +771,6 @@ function update() {
           position:'top',
           labels:{font:{size:10},padding:8,color:'#a0aec0',usePointStyle:true},
           onClick(e, legendItem, legend) {
-            // toggle dataset visibility (Chart.js default behaviour)
             const idx = legendItem.datasetIndex;
             const meta = legend.chart.getDatasetMeta(idx);
             meta.hidden = !meta.hidden;
@@ -763,6 +781,12 @@ function update() {
       scales:{
         x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0',font:{size:10}}},
         y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0'},beginAtZero:true}
+      },
+      onClick(evt) {
+        const pts = prChartInst.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+        if (!pts.length) return;
+        const name = actPr[pts[0].index]?.name;
+        if (name) toggleEmpFilter(name);
       }
     }
   });
@@ -823,10 +847,15 @@ function renderJobTable() {
       if (!checkFn || !checkFn(r)) return false;
     }
     if (empFilter) {
-      // กรองจาก col 10-16 เท่านั้น (design/photo/video/soat)
       const designEmpsInRow = ['design','photo','video','soat']
         .flatMap(k => (r.taskEmps?.[k]) || []);
       if (!designEmpsInRow.some(e=>e===empFilter)) return false;
+    }
+    if (state.selectedEmp) {
+      const allTask = ['design','photo','video','soat','pr']
+        .flatMap(k => (r.taskEmps?.[k]) || []);
+      const allPr = Object.values(r.prChannels||{}).flat();
+      if (![...allTask,...allPr].includes(state.selectedEmp)) return false;
     }
     if (ownerFilter && r.owner !== ownerFilter)       return false;
     if (search && !r.jobDetail.toLowerCase().includes(search) &&
@@ -901,6 +930,23 @@ function toggleOwnerFilter(name) {
 function clearOwnerFilter() {
   state.selectedOwner = '';
   document.getElementById('ownerBadge').style.display = 'none';
+  update();
+}
+function toggleEmpFilter(name) {
+  state.selectedEmp = (state.selectedEmp === name) ? '' : name;
+  const badge = document.getElementById('empBadge');
+  const badgeText = document.getElementById('empBadgeText');
+  if (state.selectedEmp) {
+    badge.style.display = 'flex';
+    badgeText.textContent = '👤 ' + state.selectedEmp;
+  } else {
+    badge.style.display = 'none';
+  }
+  update();
+}
+function clearEmpFilter() {
+  state.selectedEmp = '';
+  document.getElementById('empBadge').style.display = 'none';
   update();
 }
 
