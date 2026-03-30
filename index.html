@@ -953,29 +953,72 @@ function clearEmpFilter() {
 }
 
 // ============================================================
-// LOAD DATA
+// LOAD DATA — with localStorage cache for instant load
 // ============================================================
-function loadData() {
-  showLoading(true);
+const LOCAL_CACHE_KEY = 'pr_dash_csv';
+const LOCAL_CACHE_TS  = 'pr_dash_ts';
+const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 นาที
+
+function loadData(forceRefresh = false) {
   document.getElementById('errorMsg').style.display = 'none';
+
+  // ✅ ลองดึงจาก localStorage ก่อน (แสดงทันที ไม่ต้องรอ network)
+  if (!forceRefresh) {
+    try {
+      const ts  = parseInt(localStorage.getItem(LOCAL_CACHE_TS) || '0', 10);
+      const csv = localStorage.getItem(LOCAL_CACHE_KEY);
+      if (csv && (Date.now() - ts) < LOCAL_CACHE_TTL) {
+        initDashboard(csv, new Date(ts), /*fromCache=*/true);
+        // โหลดข้อมูลใหม่เงียบๆ เบื้องหลัง
+        fetchFresh(/*silent=*/true);
+        return;
+      }
+    } catch(e) { /* localStorage blocked */ }
+  }
+
+  showLoading(true);
+  fetchFresh(/*silent=*/false);
+}
+
+function fetchFresh(silent) {
   fetch(WEBAPP_URL)
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
     .then(text => {
       if (!text || text.startsWith('ERROR:')) throw new Error(text || 'ไม่มีข้อมูล');
-      DB = buildDB(text);
-      showLoading(false);
-      const now = new Date();
-      document.getElementById('lastUpdate').textContent =
-        now.toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'});
-      document.getElementById('totalCount').textContent = DB.rawRows.length.toLocaleString();
-      buildPeriodSel();
-      update();
-      buildJobTable();
+      try {
+        localStorage.setItem(LOCAL_CACHE_KEY, text);
+        localStorage.setItem(LOCAL_CACHE_TS, Date.now().toString());
+      } catch(e) {}
+      if (!silent) {
+        initDashboard(text, new Date(), /*fromCache=*/false);
+      } else {
+        // อัพเดต timestamp เงียบๆ ไม่ re-render ซ้ำ
+        document.getElementById('lastUpdate').textContent =
+          new Date().toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' });
+      }
     })
     .catch(err => {
-      showLoading(false);
-      showError('โหลดข้อมูลไม่ได้: ' + err.message);
+      if (!silent) {
+        showLoading(false);
+        showError('โหลดข้อมูลไม่ได้: ' + err.message);
+      }
     });
+}
+
+function initDashboard(text, date, fromCache) {
+  // ใช้ requestAnimationFrame ให้ browser paint loading state ก่อน
+  requestAnimationFrame(() => {
+    DB = buildDB(text);
+    showLoading(false);
+    document.getElementById('lastUpdate').textContent =
+      date.toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' })
+      + (fromCache ? ' (cache)' : '');
+    document.getElementById('totalCount').textContent = DB.rawRows.length.toLocaleString();
+    buildPeriodSel();
+    update();
+    // defer buildJobTable ให้ chart render ก่อน แล้วค่อย render ตาราง
+    setTimeout(() => buildJobTable(), 0);
+  });
 }
 
 // ============================================================
@@ -1000,3 +1043,31 @@ document.getElementById('periodSel').addEventListener('change', e => {
 
 document.querySelectorAll('.task-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    const t = btn.dataset.t;
+    if (t === 'design') state.showDesign = !state.showDesign;
+    if (t === 'photo')  state.showPhoto  = !state.showPhoto;
+    if (t === 'video')  state.showVideo  = !state.showVideo;
+    if (t === 'soat')   state.showSoat   = !state.showSoat;
+    if (t === 'pr')     state.showPr     = !state.showPr;
+    btn.classList.toggle('active');
+    update();
+  });
+});
+
+document.getElementById('reloadBtn').addEventListener('click', () => {
+  // forceRefresh = true → ข้าม cache เสมอ
+  loadData(true);
+});
+
+document.getElementById('jobTypeFilter').addEventListener('change', () => { jobCurrentPage = 1; renderJobTable(); });
+document.getElementById('jobEmpFilter').addEventListener('change',  () => { jobCurrentPage = 1; renderJobTable(); });
+document.getElementById('jobOwnerFilter').addEventListener('change',() => { jobCurrentPage = 1; renderJobTable(); });
+document.getElementById('jobSearch').addEventListener('input',      () => { jobCurrentPage = 1; renderJobTable(); });
+
+// ============================================================
+// INIT
+// ============================================================
+loadData();
+</script>
+</body>
+</html>
