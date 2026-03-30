@@ -702,7 +702,7 @@ function update() {
   if(state.showSoat)   datasets.push({label:'โสตฯ',      data:getData('soat'), backgroundColor:'rgba(246,173,85,0.75)', borderRadius:4,stack:'a'});
   if(state.showPr)     datasets.push({label:'ประชาสัมพันธ์',data:getData('pr'), backgroundColor:'rgba(159,122,234,0.75)', borderRadius:4,stack:'b'});
 
-  if (timelineChartInst) timelineChartInst.destroy();
+  if (timelineChartInst) { timelineChartInst.destroy(); timelineChartInst = null; }
   timelineChartInst = new Chart(document.getElementById('timelineChart'),{
     type:'bar', data:{labels, datasets},
     options:{responsive:true,plugins:{legend:{labels:{font:{size:10},padding:10,color:'#718096'}}},
@@ -712,7 +712,7 @@ function update() {
 
   // Design per person chart
   const actDesign = sorted.filter(e=>e.designTotal>0);
-  if (designChartInst) designChartInst.destroy();
+  if (designChartInst) { designChartInst.destroy(); designChartInst = null; }
   const mkDesignColor = (base, names) => names.map(n =>
     state.selectedEmp && state.selectedEmp !== n ? base.replace(/[\d.]+\)$/, '0.2)') : base
   );
@@ -730,11 +730,12 @@ function update() {
         x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0'}},
         y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0'},beginAtZero:true}
       },
-      onClick(evt) {
-        const pts = designChartInst.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+      onClick(evt, elements, chart) {
+        const pts = chart.getElementsAtEventForMode(evt,'index',{intersect:false},true);
         if (!pts.length) return;
         const name = actDesign[pts[0].index]?.name;
-        if (name) toggleEmpFilter(name);
+        // defer ให้ Chart.js จบ event pipeline ก่อน destroy+recreate
+        if (name) setTimeout(() => toggleEmpFilter(name), 0);
       }
     }
   });
@@ -750,7 +751,7 @@ function update() {
   ];
   // เฉพาะคนที่มีอย่างน้อย 1 channel
   const actPr = sorted.filter(e => PR_CHANNELS.some(ch => e[ch.key] > 0));
-  if (prChartInst) prChartInst.destroy();
+  if (prChartInst) { prChartInst.destroy(); prChartInst = null; }
   prChartInst = new Chart(document.getElementById('prChart'),{
     type:'bar',
     data:{
@@ -782,11 +783,12 @@ function update() {
         x:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0',font:{size:10}}},
         y:{stacked:true,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#a0aec0'},beginAtZero:true}
       },
-      onClick(evt) {
-        const pts = prChartInst.getElementsAtEventForMode(evt,'index',{intersect:false},true);
+      onClick(evt, elements, chart) {
+        const pts = chart.getElementsAtEventForMode(evt,'index',{intersect:false},true);
         if (!pts.length) return;
         const name = actPr[pts[0].index]?.name;
-        if (name) toggleEmpFilter(name);
+        // defer ให้ Chart.js จบ event pipeline ก่อน destroy+recreate
+        if (name) setTimeout(() => toggleEmpFilter(name), 0);
       }
     }
   });
@@ -998,32 +1000,3 @@ document.getElementById('periodSel').addEventListener('change', e => {
 
 document.querySelectorAll('.task-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    btn.classList.toggle('active');
-    const t = btn.dataset.t;
-    if (t==='design') state.showDesign = btn.classList.contains('active');
-    else if (t==='photo')  state.showPhoto  = btn.classList.contains('active');
-    else if (t==='video')  state.showVideo  = btn.classList.contains('active');
-    else if (t==='soat')   state.showSoat   = btn.classList.contains('active');
-    else if (t==='pr')     state.showPr     = btn.classList.contains('active');
-    jobCurrentPage = 1;
-    update();
-  });
-});
-
-document.getElementById('reloadBtn').addEventListener('click', () => loadData());
-
-// job filter listeners — ใช้ event delegation แทน เพื่อให้ทำงานได้แม้ element ซ่อนอยู่
-document.addEventListener('change', e => {
-  if (['jobTypeFilter','jobEmpFilter','jobOwnerFilter'].includes(e.target.id)) {
-    jobCurrentPage = 1; renderJobTable();
-  }
-});
-document.addEventListener('input', e => {
-  if (e.target.id === 'jobSearch') { jobCurrentPage = 1; renderJobTable(); }
-});
-
-// Start
-loadData();
-</script>
-</body>
-</html>
