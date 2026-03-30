@@ -980,8 +980,16 @@ function loadData(forceRefresh = false) {
   fetchFresh(/*silent=*/false);
 }
 
+// AbortController สำหรับยกเลิก fetch ที่ค้างอยู่เมื่อมีการ refresh/navigate
+let _fetchController = null;
+
 function fetchFresh(silent) {
-  fetch(WEBAPP_URL)
+  // ยกเลิก fetch เดิมที่ยังค้างอยู่ก่อนเริ่มอันใหม่
+  if (_fetchController) _fetchController.abort();
+  _fetchController = new AbortController();
+  const signal = _fetchController.signal;
+
+  fetch(WEBAPP_URL, { signal })
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
     .then(text => {
       if (!text || text.startsWith('ERROR:')) throw new Error(text || 'ไม่มีข้อมูล');
@@ -993,17 +1001,25 @@ function fetchFresh(silent) {
         initDashboard(text, new Date(), /*fromCache=*/false);
       } else {
         // อัพเดต timestamp เงียบๆ ไม่ re-render ซ้ำ
-        document.getElementById('lastUpdate').textContent =
+        const el = document.getElementById('lastUpdate');
+        if (el) el.textContent =
           new Date().toLocaleDateString('th-TH', { year:'numeric', month:'short', day:'numeric' });
       }
     })
     .catch(err => {
+      // AbortError = ผู้ใช้ refresh/navigate หรือ fetch ใหม่ถูกเรียก → ไม่ต้องแสดง error
+      if (err.name === 'AbortError') return;
       if (!silent) {
         showLoading(false);
         showError('โหลดข้อมูลไม่ได้: ' + err.message);
       }
     });
 }
+
+// ยกเลิก fetch ที่ค้างอยู่เมื่อผู้ใช้ออกจากหน้า
+window.addEventListener('beforeunload', () => {
+  if (_fetchController) _fetchController.abort();
+});
 
 function initDashboard(text, date, fromCache) {
   // ใช้ requestAnimationFrame ให้ browser paint loading state ก่อน
