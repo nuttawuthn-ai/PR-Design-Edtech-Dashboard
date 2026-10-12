@@ -295,7 +295,7 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
 </div><!-- /wrap -->
 
 <script>
-const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwYuaqHkHAgHD5jDJXga8J9C7yQbnklhiDy7GE7yN5t3LeNT4HOaWcCmam8XUNe_WI/exec';
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzv-OozVgWnVR2rF0-KmRUPe9FOqfYIJKFvWj_b9cwiopoz2_ctfFisgCSDl1-7u2rRMQ/exec'; // PR Bridge: อ่านจาก JOB Assignment
 
 // column indices (0-based)
 const COL = {
@@ -429,16 +429,23 @@ function buildDB(csv) {
     const getName = (v) => { const s = clean(v); return (s.length>=2 && s.length<=30) ? s : ''; };
     const splitNames = (v) => clean(v).split(',').map(e=>e.trim()).filter(e=>e.length>=2 && e.length<=30);
 
-    // task columns → ชื่อผู้รับผิดชอบหลักของแต่ละ task
-    const designEmp  = getName(row[COL.design]);    // ออกแบบสื่อ (ภาพนิ่ง)
-    const designVEmp = getName(row[COL.designVid]);  // ออกแบบสื่อ (วิดีโอ)
-    const photoEmp   = getName(row[COL.photo]);      // ถ่ายภาพ
-    const videoEmp   = getName(row[COL.video]);      // ตัดต่อวิดีโอ
-    const soat1Emp   = getName(row[COL.soat1]);   // ติดตั้งโสตฯ
-    const soat2Emp   = getName(row[COL.soat2]);   // ผลิตรายการ
-    const soat3Emp   = getName(row[COL.soat3]);   // อื่นๆ โสตฯ
+    // task columns → รายชื่อผู้รับผิดชอบของแต่ละ task (1 ช่องมีได้หลายคน คั่นด้วย ,)
+    const designEmps  = splitNames(row[COL.design]);    // ออกแบบสื่อ (ภาพนิ่ง)
+    const designVEmps = splitNames(row[COL.designVid]); // ออกแบบสื่อ (วิดีโอ)
+    const photoEmps   = splitNames(row[COL.photo]);     // ถ่ายภาพ
+    const videoEmps   = splitNames(row[COL.video]);     // ตัดต่อวิดีโอ
+    const soat1Emps   = splitNames(row[COL.soat1]);     // ติดตั้งโสตฯ
+    const soat2Emps   = splitNames(row[COL.soat2]);     // ผลิตรายการ
+    const soat3Emps   = splitNames(row[COL.soat3]);     // อื่นๆ โสตฯ
+    const designEmp  = designEmps[0]  || '';
+    const designVEmp = designVEmps[0] || '';
+    const photoEmp   = photoEmps[0]   || '';
+    const videoEmp   = videoEmps[0]   || '';
+    const soat1Emp   = soat1Emps[0]   || '';
+    const soat2Emp   = soat2Emps[0]   || '';
+    const soat3Emp   = soat3Emps[0]   || '';
     const prCols     = [COL.pr1,COL.pr2,COL.pr3,COL.pr4,COL.pr5,COL.pr6,COL.pr7,COL.pr8,COL.pr9,COL.pr10,COL.pr11,COL.pr12,COL.pr13,COL.pr14];
-    const prEmpList  = prCols.map(c=>getName(row[c])).filter(Boolean);
+    const prEmpList  = [...new Set(prCols.flatMap(c=>splitNames(row[c])))];
 
     const isDesign = !!(designEmp || designVEmp);
     const isPhoto  = !!photoEmp;
@@ -467,10 +474,10 @@ function buildDB(csv) {
 
     // taskEmps: col 10-16 (ไม่รวม PR)
     const taskEmps = {
-      design: [...new Set([designEmp, designVEmp].filter(Boolean))],  // col 10+11
-      photo:  photoEmp   ? [photoEmp]   : [],   // col 12: ถ่ายภาพ
-      video:  videoEmp   ? [videoEmp]   : [],   // col 13: ตัดต่อวิดีโอ
-      soat:   [...new Set([soat1Emp, soat2Emp, soat3Emp].filter(Boolean))], // col 14-16
+      design: [...new Set([...designEmps, ...designVEmps])],             // col 10+11
+      photo:  photoEmps,                                                 // col 12: ถ่ายภาพ
+      video:  videoEmps,                                                 // col 13: ตัดต่อวิดีโอ
+      soat:   [...new Set([...soat1Emps, ...soat2Emps, ...soat3Emps])],  // col 14-16
       pr:     prEmpList
     };
 
@@ -492,12 +499,12 @@ function buildDB(csv) {
     ];
     // PR 6 channels
     const prChannels = {
-      fb:      getName(row[COL.pr7])  ? [getName(row[COL.pr7])]  : [],
-      lineoa:  getName(row[COL.pr8])  ? [getName(row[COL.pr8])]  : [],
-      tiktok:  getName(row[COL.pr9])  ? [getName(row[COL.pr9])]  : [],
-      ig:      getName(row[COL.pr10]) ? [getName(row[COL.pr10])] : [],
-      web:     getName(row[COL.pr11]) ? [getName(row[COL.pr11])] : [],
-      libteam: getName(row[COL.pr12]) ? [getName(row[COL.pr12])] : [],
+      fb:      splitNames(row[COL.pr7]),
+      lineoa:  splitNames(row[COL.pr8]),
+      tiktok:  splitNames(row[COL.pr9]),
+      ig:      splitNames(row[COL.pr10]),
+      web:     splitNames(row[COL.pr11]),
+      libteam: splitNames(row[COL.pr12]),
     };
     rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, subTags, emps, taskEmps, soatCols, prChannels, year, ym });
 
@@ -955,7 +962,7 @@ function clearEmpFilter() {
 // ============================================================
 // LOAD DATA — with localStorage cache for instant load
 // ============================================================
-const LOCAL_CACHE_KEY = 'pr_dash_csv';
+const LOCAL_CACHE_KEY = 'pr_dash_csv_v2'; // v2: ข้อมูลจาก JOB Assignment
 const LOCAL_CACHE_TS  = 'pr_dash_ts';
 const LOCAL_CACHE_TTL = 30 * 60 * 1000; // 30 นาที
 
