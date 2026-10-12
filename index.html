@@ -182,6 +182,10 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
       <button class="task-btn pr active" data-t="pr"><span class="dot"></span> ประชาสัมพันธ์</button>
     </div>
   </div>
+  <div class="filter-group" id="deptGroup" style="display:none">
+    <span class="filter-label">🏢 ฝ่ายเจ้าของงาน</span>
+    <select class="period-sel" id="deptSel" style="width:auto;max-width:230px;text-overflow:ellipsis"></select>
+  </div>
 </div>
 
 <!-- KPI Row -->
@@ -328,7 +332,7 @@ const COL = {
 };
 
 let DB = null;
-let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true, selectedOwner: '', selectedEmp: '' };
+let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true, selectedOwner: '', selectedEmp: '', selectedDept: '' };
 let jobCurrentPage = 1;
 let rankCurrentPage = 1;
 let timelineChartInst = null, designChartInst = null, prChartInst = null;
@@ -399,6 +403,7 @@ function buildDB(csv) {
     const timestamp  = clean(row[COL.timestamp]);
     const jobId      = clean(row[COL.jobId]);
     const owner      = clean(row[COL.owner]);
+    const dept       = clean(row[COL.dept]);
     const assignDate = clean(row[COL.assignDate]);
     const recvDate   = clean(row[COL.receiveDate]);
     const jobDetail  = clean(row[3]) || clean(row[1]);  // เนื้อหา หรือ รหัสงาน
@@ -506,7 +511,7 @@ function buildDB(csv) {
       web:     splitNames(row[COL.pr11]),
       libteam: splitNames(row[COL.pr12]),
     };
-    rawRows.push({ jobId, jobDetail, owner, assignDate, recvDate, tags, subTags, emps, taskEmps, soatCols, prChannels, year, ym });
+    rawRows.push({ jobId, jobDetail, owner, dept, assignDate, recvDate, tags, subTags, emps, taskEmps, soatCols, prChannels, year, ym });
 
     // aggregate per employee — นับเฉพาะ task ที่ตัวเองทำ
     const addEmp = (emp, field) => {
@@ -590,6 +595,7 @@ function getEmpData(emp) {
   DB.rawRows.forEach(r => {
     if (!empKeys.includes(r.ym) && !empKeys.some(k => r.ym.startsWith(k))) return;
     if (state.selectedOwner && r.owner !== state.selectedOwner) return;
+    if (state.selectedDept && r.dept !== state.selectedDept) return;
     if (state.selectedEmp && emp !== state.selectedEmp) return;
     // design/photo/video/soat — นับจาก taskEmps ของแต่ละ emp
     const te = r.taskEmps || {};
@@ -626,6 +632,7 @@ function update() {
   DB.rawRows.forEach(r => {
     if (!kpiKeys.includes(r.ym) && !kpiKeys.some(k => r.ym.startsWith(k))) return;
     if (state.selectedOwner && r.owner !== state.selectedOwner) return;
+    if (state.selectedDept && r.dept !== state.selectedDept) return;
     if (state.showDesign && r.tags.includes('design')) tDesign++;
     if (state.showPhoto  && r.tags.includes('photo'))  tPhoto++;
     if (state.showVideo  && r.tags.includes('video'))  tVideo++;
@@ -637,6 +644,7 @@ function update() {
   const tTotal = DB.rawRows.filter(r => {
     if (!kpiKeys.includes(r.ym) && !kpiKeys.some(k => r.ym.startsWith(k))) return false;
     if (state.selectedOwner && r.owner !== state.selectedOwner) return false;
+    if (state.selectedDept && r.dept !== state.selectedDept) return false;
     return true;
   }).length;
   setNum('k-design', tDesign);
@@ -655,6 +663,7 @@ function update() {
   DB.rawRows.forEach(r => {
     if (!kpiKeysForRank.includes(r.ym) && !kpiKeysForRank.some(k=>r.ym.startsWith(k))) return;
     if (!r.owner || r.owner==='ไม่ระบุ') return;
+    if (state.selectedDept && r.dept !== state.selectedDept) return;
     ownerCount[r.owner] = (ownerCount[r.owner]||0) + 1;
   });
   const ownerSorted = Object.entries(ownerCount).sort((a,b)=>b[1]-a[1]);
@@ -698,6 +707,7 @@ function update() {
       if (!r.ym.startsWith(k)) return false;
       if (!r.tags.includes(field)) return false;
       if (state.selectedOwner && r.owner !== state.selectedOwner) return false;
+      if (state.selectedDept && r.dept !== state.selectedDept) return false;
       return true;
     }).length;
   });
@@ -842,6 +852,7 @@ function renderJobTable() {
   const rows = DB.rawRows.filter(r => {
     if (!tblKeys.includes(r.ym) && !tblKeys.some(k => r.ym.startsWith(k))) return false;
     if (state.selectedOwner && r.owner !== state.selectedOwner) return false;
+    if (state.selectedDept && r.dept !== state.selectedDept) return false;
     if (typeFilter) {
       // map option value → taskEmps sub-key
       const TYPE_MAP = {
@@ -1038,11 +1049,34 @@ function initDashboard(text, date, fromCache) {
       + (fromCache ? ' (cache)' : '');
     document.getElementById('totalCount').textContent = DB.rawRows.length.toLocaleString();
     buildPeriodSel();
+    buildDeptSel();
     update();
     // defer buildJobTable ให้ chart render ก่อน แล้วค่อย render ตาราง
     setTimeout(() => buildJobTable(), 0);
   });
 }
+
+// ตัวกรองฝ่ายเจ้าของงาน — แสดงเมื่อข้อมูลมีคอลัมน์สังกัด
+function buildDeptSel() {
+  const sel = document.getElementById('deptSel');
+  const cnt = {};
+  DB.rawRows.forEach(r => { if (r.dept) cnt[r.dept] = (cnt[r.dept] || 0) + 1; });
+  const depts = Object.keys(cnt).sort((a, b) =>
+    (a === 'ไม่ระบุฝ่าย') - (b === 'ไม่ระบุฝ่าย') || a.localeCompare(b, 'th'));
+  const show = depts.length > 0;
+  document.getElementById('deptGroup').style.display = show ? '' : 'none';
+  if (!depts.includes(state.selectedDept)) state.selectedDept = '';
+  sel.innerHTML = '<option value="">ทุกฝ่าย</option>' +
+    depts.map(d => `<option value="${d}">${d}</option>`).join('');
+  sel.value = state.selectedDept;
+}
+document.getElementById('deptSel').addEventListener('change', e => {
+  state.selectedDept = e.target.value;
+  if (state.selectedOwner) clearOwnerFilter();
+  jobCurrentPage = 1; rankCurrentPage = 1;
+  update();
+  renderJobTable();
+});
 
 // ============================================================
 // EVENT LISTENERS
