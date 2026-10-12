@@ -234,6 +234,20 @@ select.period-sel{background:#ffffff;border:1px solid rgba(0,0,0,.12);color:var(
   </div>
 </div>
 
+<div id="deptSection" style="display:none">
+<div class="sl">งานแยกตามฝ่ายเจ้าของงาน</div>
+<div class="card" style="margin-bottom:16px">
+  <div class="ch">
+    <div class="ct"><span class="ico">🏢</span> จำนวนงานแยกตามฝ่าย</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:11px;color:var(--t2)">คลิกแท่งเพื่อกรองทั้งหน้าตามฝ่าย</div>
+      <div class="cb" id="deptPeriodLabel">ทั้งหมด</div>
+    </div>
+  </div>
+  <div id="deptChartWrap" style="position:relative;height:320px"><canvas id="deptChart"></canvas></div>
+</div>
+</div>
+
 <div class="sl">รายบุคคล</div>
 <div class="g2" style="margin-bottom:16px;grid-template-columns:1fr 0.8fr">
   <div class="card">
@@ -335,7 +349,7 @@ let DB = null;
 let state = { periodType: 'year', period: 'ทั้งหมด', showDesign: true, showPhoto: true, showVideo: true, showSoat: true, showPr: true, selectedOwner: '', selectedEmp: '', selectedDept: '' };
 let jobCurrentPage = 1;
 let rankCurrentPage = 1;
-let timelineChartInst = null, designChartInst = null, prChartInst = null;
+let timelineChartInst = null, designChartInst = null, prChartInst = null, deptChartInst = null;
 
 Chart.defaults.font.family = "'Sarabun', sans-serif";
 Chart.defaults.color = '#718096';
@@ -656,6 +670,7 @@ function update() {
 
   const pLabel = state.period === 'ทั้งหมด' ? (state.periodType==='year'?'ทุกปี':'ทุกเดือน') : state.period;
   document.getElementById('chartPeriodLabel').textContent = pLabel;
+  renderDeptChart(kpiKeys, pLabel);
 
   // Rank bars — เจ้าของงาน (owner) นับจาก rawRows
   const ownerCount = {};
@@ -1053,6 +1068,84 @@ function initDashboard(text, date, fromCache) {
     update();
     // defer buildJobTable ให้ chart render ก่อน แล้วค่อย render ตาราง
     setTimeout(() => buildJobTable(), 0);
+  });
+}
+
+// กราฟจำนวนงานแยกตามฝ่าย — ตามช่วงเวลา/ประเภทงานที่เลือก (ไม่กรองตามฝ่าย แต่ไฮไลต์ฝ่ายที่เลือก)
+function renderDeptChart(keys, pLabel) {
+  const section = document.getElementById('deptSection');
+  const hasDept = DB.rawRows.some(r => r.dept);
+  section.style.display = hasDept ? '' : 'none';
+  if (!hasDept) return;
+  document.getElementById('deptPeriodLabel').textContent = pLabel;
+
+  const TYPES = [
+    { key:'design', label:'ออกแบบสื่อ',    on:state.showDesign, color:'124,158,245' },
+    { key:'photo',  label:'ถ่ายภาพ',       on:state.showPhoto,  color:'86,204,178'  },
+    { key:'video',  label:'ตัดต่อวิดีโอ',   on:state.showVideo,  color:'246,135,179' },
+    { key:'soat',   label:'โสตฯ',          on:state.showSoat,   color:'246,173,85'  },
+    { key:'pr',     label:'ประชาสัมพันธ์',  on:state.showPr,     color:'159,122,234' },
+  ].filter(t => t.on);
+
+  const agg = {};   // dept → { jobs, design, photo, ... }
+  DB.rawRows.forEach(r => {
+    if (!r.dept) return;
+    if (!keys.includes(r.ym) && !keys.some(k => r.ym.startsWith(k))) return;
+    if (state.selectedOwner && r.owner !== state.selectedOwner) return;
+    const hit = TYPES.filter(t => r.tags.includes(t.key));
+    if (!hit.length) return;
+    const a = agg[r.dept] = agg[r.dept] || { jobs:0 };
+    a.jobs++;
+    hit.forEach(t => a[t.key] = (a[t.key] || 0) + 1);
+  });
+  const depts = Object.keys(agg).sort((x, y) =>
+    (x === 'ไม่ระบุฝ่าย') - (y === 'ไม่ระบุฝ่าย') || agg[y].jobs - agg[x].jobs);
+
+  const sel = state.selectedDept;
+  const alpha = d => (sel && d !== sel) ? 0.18 : 0.8;
+  const datasets = TYPES.map(t => ({
+    label: t.label,
+    data: depts.map(d => agg[d][t.key] || 0),
+    backgroundColor: depts.map(d => `rgba(${t.color},${alpha(d)})`),
+    borderRadius: 4, stack: 's', maxBarThickness: 26,
+  }));
+  const labels = depts.map(d => `${d}  (${agg[d].jobs.toLocaleString()} งาน)`);
+
+  document.getElementById('deptChartWrap').style.height = Math.max(160, depts.length * 40 + 70) + 'px';
+  if (deptChartInst) { deptChartInst.destroy(); deptChartInst = null; }
+  deptChartInst = new Chart(document.getElementById('deptChart'), {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { font:{size:10}, padding:10, color:'#718096',
+          // legend ใช้สีเต็มเสมอ (สีแท่งแรกอาจจางเมื่อเลือกฝ่ายอื่น)
+          generateLabels: chart => chart.data.datasets.map((ds, i) => ({
+            text: ds.label, fillStyle: `rgba(${TYPES[i].color},.8)`, strokeStyle: 'transparent',
+            fontColor: '#718096', datasetIndex: i, hidden: !chart.isDatasetVisible(i) })) } },
+        tooltip: { callbacks: {
+          title: items => depts[items[0].dataIndex],
+          footer: items => 'รวม ' + agg[depts[items[0].dataIndex]].jobs.toLocaleString() +
+                           ' งาน (1 งานอาจมีหลายประเภท)',
+        } },
+      },
+      scales: {
+        x: { stacked:true, beginAtZero:true, grid:{color:'rgba(0,0,0,.05)'}, ticks:{color:'#a0aec0'},
+             title:{display:true, text:'จำนวนงานแยกตามประเภท (1 งานอาจนับได้หลายประเภท)', color:'#a0aec0', font:{size:10}} },
+        y: { stacked:true, grid:{display:false}, ticks:{color:'#4a5568', font:{size:12}} },
+      },
+      onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const d = depts[els[0].index];
+        state.selectedDept = (state.selectedDept === d) ? '' : d;
+        document.getElementById('deptSel').value = state.selectedDept;
+        if (state.selectedOwner) { state.selectedOwner = ''; document.getElementById('ownerBadge').style.display = 'none'; }
+        jobCurrentPage = 1; rankCurrentPage = 1;
+        update();
+      },
+    },
   });
 }
 
